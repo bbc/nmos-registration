@@ -1,7 +1,13 @@
 [Unit]
 Description=nmosregistration
-Wants=network-online.target
-After=network-online.target
+Wants=network-online.target apache2.service
+After=network.target network-online.target apache2.service
 
 [Service]
+User=ipstudio
 ExecStart=/usr/bin/nmosregistration
+
+[Install]
+Alias=nmosquery.service
+Alias=ips-regaggregator.service
+WantedBy=multi-user.target

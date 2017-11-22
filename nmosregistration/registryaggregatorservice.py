@@ -29,12 +29,16 @@ monkey.patch_all()
 
 HOST = getLocalIP()
 SERVICE_PORT = 8235
-DNS_SD_PORT = 80
+DNS_SD_HTTP_PORT = 80
+DNS_SD_HTTPS_PORT = 443
+DNS_SD_NAME = 'registration_' + str(HOST)
+DNS_SD_TYPE = '_nmos-registration._tcp'
+API_VERSIONS = ["v1.0", "v1.1", "v1.2"]
 REGISTRY_PORT = 4001
 
 class RegistryAggregatorService(object):
     def __init__(self, logger=None, interactive=False):
-        self.config      = {"priority": 0}
+        self.config      = {"priority": 0, "https_mode": "disabled"}
         self._load_config()
         self.running     = False
         self.httpServer  = None
@@ -44,9 +48,14 @@ class RegistryAggregatorService(object):
 
     def _load_config(self):
         try:
-            config_file = "/etc/nmos-registration/config.json"
-            if os.path.isfile(config_file):
-                f = open(config_file, 'r')
+            # Check for current nmos config file and legacy ipstudio file
+            nmos_config_file = "/etc/nmos-registration/config.json"
+            ipsudio_config_file = "/ect/ips-regaggregator/config.json"
+            if os.path.isfile(nmos_config_file):
+                f = open(nmos_config_file, 'r')
+            elif os.path.isfile(ipstudio_config_file):
+                f = open(ipstudio_config_file, 'r')
+            if f:
                 extra_config = json.loads(f.read())
                 self.config.update(extra_config)
         except Exception as e:
@@ -74,11 +83,16 @@ class RegistryAggregatorService(object):
         if not str(priority).isdigit() or priority < 100:
             priority = 0
 
-        self.mdns.register('registration_' + str(HOST),
-                           '_nmos-registration._tcp', DNS_SD_PORT,
-                           {"pri": priority,
-                            "api_ver": "v1.0,v1.1,v1.2",
-                            "api_proto": "http"})
+        if self.config["https_mode"] != "enabled":
+            self.mdns.register(DNS_SD_NAME + "_http", DNS_SD_TYPE, DNS_SD_HTTP_PORT,
+                               {"pri": priority,
+                                "api_ver": ",".join(API_VERSIONS),
+                                "api_proto": "http"})
+        if self.config["https_mode"] != "disabled":
+            self.mdns.register(DNS_SD_NAME + "_https", DNS_SD_TYPE, DNS_SD_HTTPS_PORT,
+                               {"pri": priority,
+                                "api_ver": ",".join(API_VERSIONS),
+                                "api_proto": "https"})
 
     def run(self):
         self.running = True

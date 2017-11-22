@@ -19,7 +19,7 @@ set -e
 
 case "$1" in
     remove|upgrade|deconfigure)
-	service nmosregistration stop || true
+	service python-registryaggregator stop || true
     ;;
 
     failed-upgrade)

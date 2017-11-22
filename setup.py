@@ -70,7 +70,6 @@ packages = find_packages(".")
 package_names = packages.keys()
 
 packages_required = [
-    "nmoscommon"
 ]
 
 deps_required = []
@@ -88,10 +87,10 @@ setup(name = "nmosregistration",
       scripts = [
                 ],
       data_files=[
-          ('/lib/systemd/system', ['lib/systemd/system/nmosregistration.service']),
           ('/usr/bin', ['bin/nmosregistration'])
       ],
       long_description = """
 Provides a service implementing the NMOS Registration API
+
 """
       )
