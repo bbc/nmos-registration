@@ -25,7 +25,6 @@ from nmosregistration.modifier import RegModifier
 from nmosregistration.common import schema
 
 VALID_TYPES = ['node', 'source', 'flow', 'device', "receiver", "sender"]
-TIMELINE_MAPPING = {'flowsegment': 'flows'}
 REGISTRY_PORT = 4001
 NODE_SEEN_TTL = 12  # seconds until a node considered "dead".
 
@@ -164,7 +163,7 @@ class RoutesCommon(object):
 
     @route('/')
     def __versionroot(self):
-        return [ 'resource', 'health/' ]
+        return [ 'resource/', 'health/' ]
 
     @route('/resource', methods=['GET', 'POST'], auto_json=False)
     def __resource(self):
@@ -185,7 +184,7 @@ class RoutesCommon(object):
                 self.logger.writeInfo("POST resource response: {}".format(r.content))
                 abort(r.status_code)
         else:
-            return jsonify([ "{}s".format(x) for x in VALID_TYPES ])
+            return make_response(jsonify([ "{}s/".format(x) for x in VALID_TYPES ]), 200)
 
     @route('/resource/<resource_type>')
     def __resource_type(self, resource_type):
@@ -195,63 +194,6 @@ class RoutesCommon(object):
             traceback.print_exc()
             raise
         return r
-
-    @route('/timeline', methods=['GET', 'POST'], auto_json=False)
-    def __timeline(self):
-        if request.method == 'POST':
-            payload = json.loads(request.get_data())
-
-            def mandatory(data, key):
-                if key not in data:
-                    abort(400, description="Required '{}' attribute missing".format(key))
-                return data[key]
-
-            rtype = mandatory(payload, 'type')          # which type of parent does this belong to?
-            flow_id = mandatory(payload['data'], 'id')          # parent id (which flow?)
-            store_id = mandatory(payload['data'], 'store_id')   # container (where?)
-            min_ts = mandatory(payload['data'], 'min_ts_utc')   # 'in' time
-
-            # map the type passed in to an internal storage type
-            if rtype not in TIMELINE_MAPPING:
-                abort(400, "No mapping for type {}".format(rtype))
-            mapped_type = TIMELINE_MAPPING[rtype]
-
-            # key for storage in registry
-            key = "timeline/{}/{}/{}/{}".format(mapped_type, flow_id, store_id, min_ts)
-
-            resp = self.registry.put_raw(key, json.dumps(payload['data']))
-
-            if resp.status_code not in [200, 201]:
-                abort(400, "Bad response from etcd: {}".format(resp.content))
-            response = make_response('', resp.status_code)
-
-            # Location header allows DELETE to remove, as below
-            response.autocorrect_location_header = False
-            response.headers["location"] = "/{}".format(key)
-            return response
-
-        elif request.method == 'GET':
-            # debug path, used internally
-            @returns_json
-            def payload():
-                return ['flows']
-            return payload()
-
-    @route('/timeline/<rtype>', methods=['GET'])
-    def __timeline_type(self, rtype):
-        rev_mapping = dict((v, k) for k, v in TIMELINE_MAPPING.iteritems())
-        if rtype not in rev_mapping:
-            abort(400, "No mapping for type '{}'".format(rtype))
-        reg_key = "timeline/{}".format(rtype)
-        reg_response = self.registry.get_raw(reg_key, recurse=False)
-        if reg_response.status_code != 200:
-            abort(400, "Bad response from registry: {}".format(reg_response.content))
-        timeline = etcd_unpack(reg_response.json())
-        return [x[len('/timeline/flows/'):] for x in timeline['/timeline/flows'].keys()]
-
-    @route('/timeline/<type>/<path:key>', methods=['DELETE'])
-    def __timeline_delete(self, type, key):
-        return self.registry.delete_raw('timeline/{}/{}'.format(type, key))
 
     @route('/resource/<resource_type>/<rname>', methods=['GET', 'DELETE'])
     def __resource_type_name(self, resource_type, rname):

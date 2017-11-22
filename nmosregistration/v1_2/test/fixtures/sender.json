@@ -8,5 +8,9 @@
     "transport": "urn:x-nmos:transport:rtp.mcast",
     "device_id": "9126cc2f-4c26-4c9b-a6cd-93c4381c9be5",
     "tags": {},
-    "interface_bindings": ["eth0"]
+    "interface_bindings": ["eth0"],
+    "subscription": {
+        "receiver_id": null,
+        "active": true
+    }
 }

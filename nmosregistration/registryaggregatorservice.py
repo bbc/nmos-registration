@@ -74,11 +74,16 @@ class RegistryAggregatorService(object):
         if not str(priority).isdigit() or priority < 100:
             priority = 0
 
-        self.mdns.register('registration_' + str(HOST),
-                           '_nmos-registration._tcp', DNS_SD_PORT,
-                           {"pri": priority,
-                            "api_ver": "v1.0,v1.1,v1.2",
-                            "api_proto": "http"})
+        if self.config["https_mode"] != "enabled":
+            self.mdns.register(DNS_SD_NAME + "_http", DNS_SD_TYPE, DNS_SD_HTTP_PORT,
+                               {"pri": priority,
+                                "api_ver": ",".join(API_VERSIONS),
+                                "api_proto": "http"})
+        if self.config["https_mode"] != "disabled":
+            self.mdns.register(DNS_SD_NAME + "_https", DNS_SD_TYPE, DNS_SD_HTTPS_PORT,
+                               {"pri": priority,
+                                "api_ver": ",".join(API_VERSIONS),
+                                "api_proto": "https"})
 
     def run(self):
         self.running = True
