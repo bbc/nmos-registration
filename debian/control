@@ -7,6 +7,7 @@ Standards-Version: 3.9.7
 
 Package: python-registryaggregator
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, nmos-reverse-proxy, python-nmoscommon, python-flask, python-ws4py, python-requests (>= 0.9.3), etcd, python-pybonjour
+Depends: ${misc:Depends}, ${python:Depends}, python-flask, python-ws4py, python-requests (>= 0.9.3), etcd, python-pybonjour
+Recommends: nmos-reverse-proxy, nmos-common
 Description: Provides NMOS Registration API functionality
  See wwww.nmos.tv for more details.
