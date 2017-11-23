@@ -29,12 +29,16 @@ monkey.patch_all()
 
 HOST = getLocalIP()
 SERVICE_PORT = 8235
-DNS_SD_PORT = 80
+DNS_SD_HTTP_PORT = 80
+DNS_SD_HTTPS_PORT = 443
+DNS_SD_NAME = 'registration_' + str(HOST)
+DNS_SD_TYPE = '_nmos-registration._tcp'
+API_VERSIONS = ["v1.0", "v1.1", "v1.2"]
 REGISTRY_PORT = 4001
 
 class RegistryAggregatorService(object):
     def __init__(self, logger=None, interactive=False):
-        self.config      = {"priority": 0}
+        self.config      = {"priority": 0, "https_mode": "disabled"}
         self._load_config()
         self.running     = False
         self.httpServer  = None
