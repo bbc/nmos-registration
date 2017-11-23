@@ -44,9 +44,14 @@ class RegistryAggregatorService(object):
 
     def _load_config(self):
         try:
-            config_file = "/etc/nmos-registration/config.json"
-            if os.path.isfile(config_file):
-                f = open(config_file, 'r')
+            # Check for current nmos config file and legacy ipstudio file
+            nmos_config_file = "/etc/nmos-registration/config.json"
+            ipsudio_config_file = "/ect/ips-regaggregator/config.json"
+            if os.path.isfile(nmos_config_file):
+                f = open(nmos_config_file, 'r')
+            elif os.path.isfile(ipstudio_config_file):
+                f = open(ipstudio_config_file, 'r')
+            if f:
                 extra_config = json.loads(f.read())
                 self.config.update(extra_config)
         except Exception as e:
