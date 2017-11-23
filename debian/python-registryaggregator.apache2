@@ -1,1 +1,1 @@
-site debian/python-registryaggregator.conf
+site debian/ips-api-registration.conf
