@@ -88,7 +88,6 @@ setup(name = "nmosregistration",
       scripts = [
                 ],
       data_files=[
-          ('/lib/systemd/system', ['lib/systemd/system/nmosregistration.service']),
           ('/usr/bin', ['bin/nmosregistration'])
       ],
       long_description = """
