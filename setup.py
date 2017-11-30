@@ -70,7 +70,6 @@ packages = find_packages(".")
 package_names = packages.keys()
 
 packages_required = [
-    "nmoscommon"
 ]
 
 deps_required = []
