@@ -76,7 +76,7 @@ systemctl stop ips-regaggregator
 rm -rf %{buildroot}
 
 %files
-%{_bindir}/nmosregistation
+%{_bindir}/nmosregistration
 
 %{_unitdir}/ips-regaggregator.service
 
