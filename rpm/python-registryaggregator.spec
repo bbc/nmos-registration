@@ -1,6 +1,6 @@
 %global module_name nmosregistration
 
-Name:           nmosregistation
+Name:           nmosregistration
 Version:        0.1.0
 Release:        1%{?dist}
 License:        Internal Licence
