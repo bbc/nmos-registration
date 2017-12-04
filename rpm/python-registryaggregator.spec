@@ -8,7 +8,7 @@ Summary:        Provides the ipstudio registry aggregator service, interfacing w
 
 Source0:        %{name}-%{version}.tar.gz
 Source1:        ips-api-registration.conf
-Source2:        python-registryaggregator.service
+Source2:        ips-regaggregator.service
 
 BuildArch:      noarch
 
