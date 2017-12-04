@@ -91,5 +91,6 @@ setup(name = "nmosregistration",
       ],
       long_description = """
 Provides a service implementing the NMOS Registration API
+
 """
       )
