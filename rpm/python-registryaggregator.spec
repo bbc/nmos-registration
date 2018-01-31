@@ -15,14 +15,14 @@ BuildArch:      noarch
 BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
 BuildRequires:  python-flask              >= 0.10.2
-BuildRequires:  python-ipppython
-BuildRequires:  python-pyipputils
 BuildRequires:  python-jsonschema
 BuildRequires:  systemd
 
 Requires:       python
 Requires:       python-flask              >= 0.10.2
-Requires:       ips-etcd
+Requires:       python-requests           >= 0.9.3
+Requires:       python-ws4py
+Requires:       etcd
 Requires:       nmosreverseproxy
 Requires:       python-jsonschema
 %{?systemd_requires}
