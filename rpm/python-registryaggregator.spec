@@ -23,9 +23,7 @@ BuildRequires:  systemd
 Requires:       python
 Requires:       python-flask              >= 0.10.2
 Requires:       ips-etcd
-Requires:       ips-reverseproxy-common
-Requires:       python-ipppython
-Requires:       python-pyipputils
+Requires:       nmosreverseproxy
 Requires:       python-jsonschema
 %{?systemd_requires}
 
