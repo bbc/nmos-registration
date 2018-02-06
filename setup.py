@@ -74,7 +74,7 @@ packages_required = [
 
 deps_required = []
 
-setup(name = "nmosregistration",
+setup(name = "python-registryaggregator",
       version = "0.1.0",
       description = "nmos registration API",
       url='www.nmos.tv',

@@ -1,6 +1,6 @@
-%global module_name nmosregistration
+%global module_name python-registryaggregator
 
-Name:           nmosregistration
+Name:           python-registryaggregator
 Version:        0.1.0
 Release:        1%{?dist}
 License:        Internal Licence
@@ -79,7 +79,7 @@ rm -rf %{buildroot}
 %{_unitdir}/ips-regaggregator.service
 
 %{python2_sitelib}/%{module_name}
-%{python2_sitelib}/nmosregistration-%{version}*.egg-info
+%{python2_sitelib}/python_registryaggregator-%{version}*.egg-info
 
 %defattr(-,ipstudio, ipstudio,-)
 %config(noreplace) %{_sysconfdir}/ips-regaggregator/config.json
