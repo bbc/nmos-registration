@@ -1,4 +1,4 @@
-%global module_name python-registryaggregator
+%global module_name nmosregistration
 
 Name:           python-registryaggregator
 Version:        0.1.0
