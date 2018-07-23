@@ -162,10 +162,10 @@ pipeline {
                         script {
                             env.artifactoryUpload_result = "SUCCESS" // This will only run if the steps above succeeded
                         }
-                        post {
-                            always {
-                                bbcGithubNotify(context: "artifactory/upload", status: env.artifactoryUpload_result)
-                            }
+                    }
+                    post {
+                        always {
+                            bbcGithubNotify(context: "artifactory/upload", status: env.artifactoryUpload_result)
                         }
                     }
                 }
@@ -194,10 +194,10 @@ pipeline {
                         script {
                             env.debUpload_result = "SUCCESS" // This will only run if the steps above succeeded
                         }
-                        post {
-                            always {
-                                bbcGithubNotify(context: "deb/upload", status: env.debUpload_result)
-                            }
+                    }
+                    post {
+                        always {
+                            bbcGithubNotify(context: "deb/upload", status: env.debUpload_result)
                         }
                     }
                 }
