@@ -16,7 +16,7 @@ import unittest
 import jsonschema
 
 from nmosregistration.v1_1 import schema
-from nmosregistration.v1_1.test import util
+from . import util
 
 class SchemaValidCase(unittest.TestCase):
 
