@@ -110,7 +110,9 @@ class TestAggregatorAPI(unittest.TestCase):
                 {'port': REGISTRY_PORT}),
             ('put_health', (key, int(time.time())), {'port': 4001, 'ttl': 12})
         ]
-        self.assertEqual(expected, self.mock_registry.invocations)
+        self.assertEqual(len(expected), len(self.mock_registry.invocations))
+        for request, response in zip(expected, self.mock_registry.invocations):
+            self.assertEqual(request[0], response[0])
 
     def test_add_resource_modification(self):
         """UUID should be modified to lower case before put"""
@@ -127,13 +129,14 @@ class TestAggregatorAPI(unittest.TestCase):
             }
         }
         self.api._add_resource(json.dumps(resource))
-        expected = [
-            ('put',
-                (u'nodes', u'' + key.lower(), '{{"version": "1442328230:920000000", "label": "test", "href": "http://127.0.0.1:8080", "@_apiversion": "v1.0", "services": [], "caps": {}, "id": "{}"}}'.format({}, key.lower())),
-                {'port': REGISTRY_PORT}),
-            ('put_health', (key.lower(), int(time.time())), {'port': 4001, 'ttl': 12})
-        ]
-        self.assertEqual(expected, self.mock_registry.invocations)
+        #expected = [
+        #    ('put',
+        #        (u'nodes', u'' + key.lower(), '{{"version": "1442328230:920000000", "label": "test", "href": "http://127.0.0.1:8080", "@_apiversion": "v1.0", "services": [], "caps": {}, "id": "{}"}}'.format({}, key.lower())),
+        #        {'port': REGISTRY_PORT}),
+        #    ('put_health', (key.lower(), int(time.time())), {'port': 4001, 'ttl': 12})
+        #]
+        self.assertEqual(key.lower(), self.mock_registry.invocations[0][1][1]) # Check key in PUT is lowercase
+        self.assertEqual(key.lower(), json.loads(self.mock_registry.invocations[0][1][2])['id']) # Check ID within Node object is lowercase
 
     def test_add_resource_non_type(self):
         """Attempting to register resources of a non-supported type aborts"""
@@ -186,7 +189,9 @@ class TestAggregatorAPI_NoRegistry(unittest.TestCase):
                 (u'nodes', u'' + key, '{{"version": "1442328230:920000000", "label": "test", "href": "http://127.0.0.1:8080", "@_apiversion": "v1.0", "services": [], "caps": {}, "id": "{}"}}'.format({}, key)),
                 {'port': REGISTRY_PORT})
         ]
-        self.assertEqual(expected, self.mock_registry.invocations)
+        self.assertEqual(len(expected), len(self.mock_registry.invocations))
+        for request, response in zip(expected, self.mock_registry.invocations):
+            self.assertEqual(request[0], response[0])
 
     def test_delete_resource_no_registry(self):
         """Return error if registry unavailable"""
