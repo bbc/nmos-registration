@@ -1,9 +1,0 @@
-python-registryaggregator (0.2) UNRELEASED; urgency=low
-
-  [ Peter Brightwell ]
-  * Initial Release
-
-  [ Simon Rankine ]
-  * Transition to open source codebase
-
- -- Simon Rankine <simonra@ap-z420-6.rd.bbc.co.uk>  Wed, 22 Nov 2017 14:49:06 +0000
