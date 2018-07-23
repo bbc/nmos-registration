@@ -49,7 +49,7 @@ packages_required = [
     "gevent>=1.2.2",
     "nmoscommon>=0.6.0",
     "flask>=0.10.1",
-    "systemd>=229",
+    "systemd>=0.16.1",
     "ws4py>=0.3.4",
     "requests>=0.9.3"
 ]
