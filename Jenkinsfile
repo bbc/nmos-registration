@@ -47,7 +47,9 @@ pipeline {
                                 }
                                 bbcGithubNotify(context: "tests/py27", status: "PENDING")
                                 // Use a workdirectory in /tmp to avoid shebang length limitation
-                                sh 'tox -e py27 --recreate --workdir /tmp/$(basename ${WORKSPACE})/tox-py27'
+                                withBBCRDPythonArtifactory {
+                                    sh 'tox -e py27 --recreate --workdir /tmp/$(basename ${WORKSPACE})/tox-py27'
+                                }
                                 script {
                                     env.py27_result = "SUCCESS" // This will only run if the sh above succeeded
                                 }
