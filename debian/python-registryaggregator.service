@@ -8,6 +8,6 @@ User=ipstudio
 ExecStart=/usr/bin/nmosregistration
 
 [Install]
-Alias=nmosquery.service
+Alias=nmosregistration.service
 Alias=ips-regaggregator.service
 WantedBy=multi-user.target
