@@ -68,6 +68,7 @@ dsc: deb_dist $(DEBIANOVERRIDES)
 	cp $(topbuilddir)/deb_dist/$(DEBNAME)_$(VERSION)-1.dsc $(topbuilddir)/dist
 
 deb: source deb_dist $(DEBIANOVERRIDES)
+	DEB_BUILD_OPTIONS=nocheck
 	cd $(DEBIANDIR)/..;debuild -uc -us
 	cp $(topbuilddir)/deb_dist/python*$(DEBNAME)_$(VERSION)-1*.deb $(topbuilddir)/dist
 
