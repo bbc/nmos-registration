@@ -59,7 +59,7 @@ $(topbuilddir)/dist:
 	mkdir -p $@
 
 deb_dist: $(topbuilddir)/dist/$(MODNAME)-$(VERSION).tar.gz
-	$(PY2DSC) --with-python2=true --with-python3=true $(topbuilddir)/dist/$(MODNAME)-$(VERSION).tar.gz
+	$(PY2DSC) --with-python2=true $(topbuilddir)/dist/$(MODNAME)-$(VERSION).tar.gz
 
 $(DEBIANDIR)/%: $(topdir)/debian/% deb_dist
 	cp -r $< $@
