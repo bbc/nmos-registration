@@ -75,10 +75,10 @@ deb: source deb_dist $(DEBIANOVERRIDES)
 
 # START OF RPM SPEC RULES
 # If you have your own rpm spec file to use you'll need to disable these rules
-$(topdir)/rpm/$(MODNAME).spec: rpm_spec
-
-rpm_spec: $(topdir)/setup.py
-	$(PYTHON3) $(topdir)/setup.py bdist_rpm --spec-only --dist-dir=$(topdir)/rpm
+#$(topdir)/rpm/$(MODNAME).spec: rpm_spec
+#
+#rpm_spec: $(topdir)/setup.py
+#	$(PYTHON3) $(topdir)/setup.py bdist_rpm --spec-only --dist-dir=$(topdir)/rpm
 # END OF RPM SPEC RULES
 
 $(RPMBUILDDIRS):
