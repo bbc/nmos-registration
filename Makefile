@@ -69,6 +69,7 @@ dsc: deb_dist $(DEBIANOVERRIDES)
 
 deb: source deb_dist $(DEBIANOVERRIDES)
 	DEB_BUILD_OPTIONS=nocheck
+	sed -i 's/--with/--with apache2 --with systemd --with/' deb_dist/$(DEBNAME)-$(VERSION)/debian/rules
 	cd $(DEBIANDIR)/..;debuild -uc -us
 	cp $(topbuilddir)/deb_dist/python*$(DEBNAME)_$(VERSION)-1*.deb $(topbuilddir)/dist
 
