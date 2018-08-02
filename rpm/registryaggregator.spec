@@ -76,10 +76,10 @@ rm -rf %{buildroot}
 %files
 %{_bindir}/nmosregistration
 
-%{_unitdir}/ips-regaggregator.service
+%{_unitdir}/%{name}.service
 
 %{python2_sitelib}/%{module_name}
-%{python2_sitelib}/python_registryaggregator-%{version}*.egg-info
+%{python2_sitelib}/%{module_name}-%{version}*.egg-info
 
 %defattr(-,ipstudio, ipstudio,-)
 %config(noreplace) %{_sysconfdir}/ips-regaggregator/config.json
