@@ -91,6 +91,7 @@ $(topbuilddir)/build/rpm/SOURCES/$(MODNAME)-$(VERSION).tar.gz: $(topbuilddir)/di
 	cp $< $@
 
 rpm: $(topbuilddir)/build/rpm/SPECS/$(MODNAME).spec $(topbuilddir)/build/rpm/SOURCES/$(MODNAME)-$(VERSION).tar.gz $(RPMBUILDDIRS)
+	cp $(topdir)/rpm/*.service $(topdir)/rpm/*.conf $(topbuilddir)/build/rpm/SOURCES
 	rpmbuild -ba --define '_topdir $(topbuilddir)/build/rpm' --clean $<
 	cp $(topbuilddir)/build/rpm/RPMS/*/*.rpm $(topbuilddir)/dist
 
