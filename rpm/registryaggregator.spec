@@ -1,12 +1,12 @@
-%global module_name nmosregistration
+%global module_name registryaggregator
 
-Name:           python-registryaggregator
-Version:        0.1.0
+Name:           python-%{module_name}
+Version:        0.2.2
 Release:        1%{?dist}
 License:        Internal Licence
 Summary:        Provides the ipstudio registry aggregator service, interfacing with etcd
 
-Source0:        %{name}-%{version}.tar.gz
+Source0:        %{module_name}-%{version}.tar.gz
 Source1:        ips-api-registration.conf
 Source2:        ips-regaggregator.service
 
@@ -31,7 +31,7 @@ Requires:       python-jsonschema
 Implementation of the registration interface
 
 %prep
-%setup -n %{name}-%{version}
+%setup -n %{module_name}-%{version}
 
 %build
 %{py2_build}
@@ -76,10 +76,10 @@ rm -rf %{buildroot}
 %files
 %{_bindir}/nmosregistration
 
-%{_unitdir}/ips-regaggregator.service
+%{_unitdir}/%{name}.service
 
 %{python2_sitelib}/%{module_name}
-%{python2_sitelib}/python_registryaggregator-%{version}*.egg-info
+%{python2_sitelib}/%{module_name}-%{version}*.egg-info
 
 %defattr(-,ipstudio, ipstudio,-)
 %config(noreplace) %{_sysconfdir}/ips-regaggregator/config.json
