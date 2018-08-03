@@ -50,7 +50,7 @@ class RegistryAggregatorService(object):
         try:
             # Check for current nmos config file and legacy ipstudio file
             nmos_config_file = "/etc/nmos-registration/config.json"
-            ipsudio_config_file = "/ect/ips-regaggregator/config.json"
+            ipstudio_config_file = "/etc/ips-regaggregator/config.json"
             if os.path.isfile(nmos_config_file):
                 f = open(nmos_config_file, 'r')
             elif os.path.isfile(ipstudio_config_file):
