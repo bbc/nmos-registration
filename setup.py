@@ -56,7 +56,7 @@ packages_required = [
 ]
 
 setup(name="registryaggregator",
-      version="0.2.3",
+      version="0.2.4",
       description="nmos registration API",
       url='www.nmos.tv',
       author='Peter Brightwell',

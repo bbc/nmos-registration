@@ -1,7 +1,7 @@
 %global module_name registryaggregator
 
 Name:           python-%{module_name}
-Version:        0.2.3
+Version:        0.2.4
 Release:        1%{?dist}
 License:        Internal Licence
 Summary:        Provides the ipstudio registry aggregator service, interfacing with etcd
