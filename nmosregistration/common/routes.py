@@ -155,6 +155,43 @@ class RoutesCommon(object):
         # Stale data will still need to be cleaned up eventually.
         self.logger.writeInfo("unregister {} {}".format(resource_type, resource_id))
         try:
+            if resource_type == "nodes":
+                # Better approach: Store an index of the trees from Nodes so we can clear them up directly when they die
+                self.logger.writeInfo("Identifying orphaned resources as a result of removing Node {}".format(resource_id))
+                garbage = {"devices": [], "senders": [], "receivers": [], "sources": [], "flows": []}
+                for device in self.registry.get_all("devices"):
+                    if device["node_id"] == resource_id:
+                        garbage["devices"].append(device["id"])
+                for sender in self.registry.get_all("senders"):
+                    for device_id in garbage["devices"]:
+                        if sender["device_id"] == device_id:
+                            garbage["senders"].append(sender["id"])
+                for receiver in self.registry.get_all("receivers"):
+                    for device_id in garbage["devices"]:
+                        if receiver["device_id"] == device_id:
+                            garbage["receivers"].append(receiver["id"])
+                for source in self.registry.get_all("sources"):
+                    for device_id in garbage["devices"]:
+                        if source["device_id"] == device_id:
+                            garbage["sources"].append(source["id"])
+                for flow in self.registry.get_all("flows"):
+                    for device_id in garbage["devices"]:
+                        if "device_id" in flow and flow["device_id"] == device_id:
+                            garbage["flows"].append(flow["id"])
+                    for source_id in garbage["sources"]:
+                        if flow["source_id"] == source_id:
+                            garbage["flows"].append(flow["id"])
+                self.logger.writeInfo("Clearing orphaned resources as a result of removing Node {}".format(resource_id))
+                for flow in garbage["flows"]:
+                    self.registry.delete("flows", flow, port=REGISTRY_PORT)
+                for source in garbage["sources"]:
+                    self.registry.delete("sources", source, port=REGISTRY_PORT)
+                for receiver in garbage["receivers"]:
+                    self.registry.delete("receivers", receiver, port=REGISTRY_PORT)
+                for sender in garbage["senders"]:
+                    self.registry.delete("senders", sender, port=REGISTRY_PORT)
+                for device in garbage["devices"]:
+                    self.registry.delete("devices", device, port=REGISTRY_PORT)
             r = self.registry.delete(resource_type, resource_id, port=REGISTRY_PORT)
         except self.registry.RegistryUnavailable:
             self.logger.writeWarning("Couldn't delete resource. Registry unavailable.")
