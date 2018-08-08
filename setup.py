@@ -18,6 +18,56 @@ from __future__ import print_function
 from setuptools import setup
 import os
 import sys
+import json
+from setuptools.command.develop import develop
+from setuptools.command.install import install
+
+
+def create_default_conf():
+    fname = "/etc/ips-regaggregator/config.json"
+    if os.path.isfile(fname):
+        return
+
+    defaultData = {
+        "priority": 100,
+        "https_mode": "disabled"
+    }
+
+    try:
+        try:
+            os.makedirs(os.path.dirname(fname))
+        except OSError as e:
+            if e.errno != os.errno.EEXIST:
+                raise
+            pass
+
+        with open(fname, 'w') as outfile:
+            json.dump(defaultData,
+                      outfile,
+                      sort_keys=True,
+                      indent=4,
+                      separators=(",", ": "))
+    except OSError as e:
+        if e.errno != os.errno.EACCES:
+            raise
+        pass
+        # Default config couldn't be created.
+        # Code will fallback to hardcoded defaults.
+        # This should only happen with un-privileged installs
+
+
+class PostDevelopCommand(develop):
+    """Post-installation for development mode."""
+    def run(self):
+        develop.run(self)
+        create_default_conf()
+
+
+class PostInstallCommand(install):
+    """Post-installation for installation mode."""
+    def run(self):
+        install.run(self)
+        create_default_conf()
 
 
 def is_package(path):
@@ -69,5 +119,9 @@ setup(name="registryaggregator",
       data_files=[
         ('/usr/bin', ['bin/nmosregistration'])
       ],
-      long_description="Provides a service implementing the NMOS Registration API"
+      long_description="Provides a service implementing the NMOS Registration API",
+      cmdclass={
+        'develop': PostDevelopCommand,
+        'install': PostInstallCommand,
+      }
       )

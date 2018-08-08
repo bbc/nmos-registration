@@ -41,7 +41,6 @@ Implementation of the registration interface
 
 # Install config file
 install -d -m 0755 %{buildroot}%{_sysconfdir}/ips-regaggregator
-install -D -p -m 0644 etc/ips-regaggregator/config.json %{buildroot}%{_sysconfdir}/ips-regaggregator/config.json
 
 # Install systemd unit file
 install -D -p -m 0644 %{SOURCE2} %{buildroot}%{_unitdir}/ips-regaggregator.service
@@ -82,7 +81,6 @@ rm -rf %{buildroot}
 %{python2_sitelib}/%{module_name}-%{version}*.egg-info
 
 %defattr(-,ipstudio, ipstudio,-)
-%config(noreplace) %{_sysconfdir}/ips-regaggregator/config.json
 
 %config %{_sysconfdir}/httpd/conf.d/ips-apis/ips-api-nmosaggregator.conf
 
