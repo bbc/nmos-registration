@@ -46,7 +46,7 @@ install -d -m 0755 %{buildroot}%{_sysconfdir}/ips-regaggregator
 install -D -p -m 0644 %{SOURCE2} %{buildroot}%{_unitdir}/ips-regaggregator.service
 
 # Install Apache config file
-install -D -p -m 0644 %{SOURCE1} %{buildroot}%{_sysconfdir}/httpd/conf.d/ips-apis/ips-api-nmosaggregator.conf
+install -D -p -m 0644 %{SOURCE1} %{buildroot}%{_sysconfdir}/httpd/conf.d/ips-apis/ips-api-registration.conf
 
 %pre
 getent group ipstudio >/dev/null || groupadd -r ipstudio
@@ -75,14 +75,14 @@ rm -rf %{buildroot}
 %files
 %{_bindir}/nmosregistration
 
-%{_unitdir}/%{name}.service
+%{_unitdir}/ips-regaggregator.service
 
 %{python2_sitelib}/%{module_name}
 %{python2_sitelib}/%{module_name}-%{version}*.egg-info
 
 %defattr(-,ipstudio, ipstudio,-)
 
-%config %{_sysconfdir}/httpd/conf.d/ips-apis/ips-api-nmosaggregator.conf
+%config %{_sysconfdir}/httpd/conf.d/ips-apis/ips-api-registration.conf
 
 %changelog
 * Tue Apr 25 2017 Sam Nicholson <sam.nicholson@bbc.co.uk> - 0.1.0-1
