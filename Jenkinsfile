@@ -6,10 +6,10 @@
  - Run Python 2.7 unit tests in tox
  - Build Debian packages for supported Ubuntu versions
 
- If these steps succeed and the master branch is being built, wheels and debs are uploaded to Artifactory and the
+ If these steps succeed and the master branch is being built, wheels and debs are uploaded to PyPI and the
  R&D Debian mirrors.
 
- Optionally you can set FORCE_PYUPLOAD to force upload to Artifactory, and FORCE_DEBUPLOAD to force Debian package
+ Optionally you can set FORCE_PYUPLOAD to force upload to PyPI, and FORCE_DEBUPLOAD to force Debian package
  upload on non-master branches.
 */
 
@@ -89,27 +89,6 @@ pipeline {
         }
         stage ("Build Packages") {
             parallel{
-                stage ("Build wheels") {
-                    stages {
-                        stage ("Build py2.7 wheel") {
-                            steps {
-                                script {
-                                    env.py27wheel_result = "FAILURE"
-                                }
-                                bbcGithubNotify(context: "wheelBuild/py2.7", status: "PENDING")
-                                bbcMakeWheel("py27")
-                                script {
-                                    env.py27wheel_result = "SUCCESS" // This will only run if the steps above succeeded
-                                }
-                            }
-                            post {
-                                always {
-                                    bbcGithubNotify(context: "wheelBuild/py2.7", status: env.py27wheel_result)
-                                }
-                            }
-                        }
-                    }
-                }
                 stage ("Build Deb with pbuilder") {
                     steps {
                         script {
@@ -148,7 +127,7 @@ pipeline {
                 }
             }
             parallel {
-                stage ("Upload to Artifactory") {
+                stage ("Upload to PyPI") {
                     when {
                         anyOf {
                             expression { return params.FORCE_PYUPLOAD }
@@ -159,17 +138,19 @@ pipeline {
                     }
                     steps {
                         script {
-                            env.artifactoryUpload_result = "FAILURE"
+                            env.pypiUpload_result = "FAILURE"
                         }
-                        bbcGithubNotify(context: "artifactory/upload", status: "PENDING")
-                        bbcTwineUpload(toxenv: "py27")
+                        bbcGithubNotify(context: "pypi/upload", status: "PENDING")
+                        sh 'rm -rf dist/*'
+                        bbcMakeGlobalWheel("py27")
+                        bbcTwineUpload(toxenv: "py27", pypi: true)
                         script {
-                            env.artifactoryUpload_result = "SUCCESS" // This will only run if the steps above succeeded
+                            env.pypiUpload_result = "SUCCESS" // This will only run if the steps above succeeded
                         }
                     }
                     post {
                         always {
-                            bbcGithubNotify(context: "artifactory/upload", status: env.artifactoryUpload_result)
+                            bbcGithubNotify(context: "pypi/upload", status: env.pypiUpload_result)
                         }
                     }
                 }
