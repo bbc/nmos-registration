@@ -20,6 +20,7 @@ from nmosregistration.garbage import GarbageCollect
 from nmosregistration.v1_0 import routes as v1_0
 from nmosregistration.v1_1 import routes as v1_1
 from nmosregistration.v1_2 import routes as v1_2
+from nmosregistration.v1_3 import routes as v1_3
 
 HOST = getLocalIP()
 SERVICE_PORT = 8235
@@ -45,6 +46,9 @@ class AggregatorAPI(WebAPI):
         self._v1_2_api = v1_2.Routes(logger=logger, registry=registry)
         self.add_routes(self._v1_2_api, basepath="/x-nmos/registration/v1.2")
 
+        self._v1_3_api = v1_3.Routes(logger=logger, registry=registry)
+        self.add_routes(self._v1_3_api, basepath="/x-nmos/registration/v1.3")
+
     @route('/')
     def __root(self):
         return (200, [AGGREGATOR_APINAMESPACE+"/"])
@@ -55,4 +59,4 @@ class AggregatorAPI(WebAPI):
 
     @route('/'+AGGREGATOR_APINAMESPACE+'/'+AGGREGATOR_APINAME+'/')
     def __nameroot(self):
-        return (200, ["v1.0/", "v1.1/", "v1.2/"])
+        return (200, ["v1.0/", "v1.1/", "v1.2/", "v1.3/"])
