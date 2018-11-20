@@ -27,6 +27,7 @@ SERVICE_PORT = 8235
 
 AGGREGATOR_APINAMESPACE = "x-nmos"
 AGGREGATOR_APINAME = "registration"
+AGGREGATOR_APIVERSIONS = ["v1.0", "v1.1", "v1.2", "v1.3"]
 
 class AggregatorAPI(WebAPI):
 
@@ -59,4 +60,4 @@ class AggregatorAPI(WebAPI):
 
     @route('/'+AGGREGATOR_APINAMESPACE+'/'+AGGREGATOR_APINAME+'/')
     def __nameroot(self):
-        return (200, ["v1.0/", "v1.1/", "v1.2/", "v1.3/"])
+        return (200, [api_version + "/" for api_version in AGGREGATOR_APIVERSIONS])

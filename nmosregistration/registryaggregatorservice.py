@@ -14,7 +14,7 @@
 
 from nmoscommon.mdns import MDNSEngine
 from nmoscommon.utils import getLocalIP
-from nmosregistration.aggregation import AggregatorAPI
+from nmosregistration.aggregation import AggregatorAPI, AGGREGATOR_APIVERSIONS
 from nmoscommon.httpserver import HttpServer
 from nmoscommon.logger import Logger
 import signal
@@ -33,7 +33,6 @@ DNS_SD_HTTP_PORT = 80
 DNS_SD_HTTPS_PORT = 443
 DNS_SD_NAME = 'registration_' + str(HOST)
 DNS_SD_TYPE = '_nmos-registration._tcp'
-API_VERSIONS = ["v1.0", "v1.1", "v1.2", "v1.3"]
 REGISTRY_PORT = 4001
 
 class RegistryAggregatorService(object):
@@ -86,12 +85,12 @@ class RegistryAggregatorService(object):
         if self.config["https_mode"] != "enabled":
             self.mdns.register(DNS_SD_NAME + "_http", DNS_SD_TYPE, DNS_SD_HTTP_PORT,
                                {"pri": priority,
-                                "api_ver": ",".join(API_VERSIONS),
+                                "api_ver": ",".join(AGGREGATOR_APIVERSIONS),
                                 "api_proto": "http"})
         if self.config["https_mode"] != "disabled":
             self.mdns.register(DNS_SD_NAME + "_https", DNS_SD_TYPE, DNS_SD_HTTPS_PORT,
                                {"pri": priority,
-                                "api_ver": ",".join(API_VERSIONS),
+                                "api_ver": ",".join(AGGREGATOR_APIVERSIONS),
                                 "api_proto": "https"})
 
     def run(self):
