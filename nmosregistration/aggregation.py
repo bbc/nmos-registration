@@ -22,12 +22,17 @@ from nmosregistration.v1_1 import routes as v1_1
 from nmosregistration.v1_2 import routes as v1_2
 from nmosregistration.v1_3 import routes as v1_3
 
+from nmoscommon.nmoscommonconfig import config as _config
+
 HOST = getLocalIP()
 SERVICE_PORT = 8235
 
 AGGREGATOR_APINAMESPACE = "x-nmos"
 AGGREGATOR_APINAME = "registration"
 AGGREGATOR_APIVERSIONS = ["v1.0", "v1.1", "v1.2", "v1.3"]
+if _config.get("https_mode", "disabled") == "enabled":
+    AGGREGATOR_APIVERSIONS.remove("v1.0")
+
 
 class AggregatorAPI(WebAPI):
 
