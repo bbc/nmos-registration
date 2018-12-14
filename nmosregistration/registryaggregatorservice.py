@@ -37,7 +37,7 @@ REGISTRY_PORT = 4001
 
 class RegistryAggregatorService(object):
     def __init__(self, logger=None, interactive=False):
-        self.config      = {"priority": 0, "https_mode": "disabled"}
+        self.config      = {"priority": 0, "https_mode": "disabled", "enable_mdns": True}
         self._load_config()
         self.running     = False
         self.httpServer  = None
@@ -82,12 +82,12 @@ class RegistryAggregatorService(object):
         if not str(priority).isdigit() or priority < 100:
             priority = 0
 
-        if self.config["https_mode"] != "enabled":
+        if self.config["https_mode"] != "enabled" and self.config["enable_mdns"]:
             self.mdns.register(DNS_SD_NAME + "_http", DNS_SD_TYPE, DNS_SD_HTTP_PORT,
                                {"pri": priority,
                                 "api_ver": ",".join(AGGREGATOR_APIVERSIONS),
                                 "api_proto": "http"})
-        if self.config["https_mode"] != "disabled":
+        if self.config["https_mode"] != "disabled" and self.config["enable_mdns"]:
             self.mdns.register(DNS_SD_NAME + "_https", DNS_SD_TYPE, DNS_SD_HTTPS_PORT,
                                {"pri": priority,
                                 "api_ver": ",".join(AGGREGATOR_APIVERSIONS),
