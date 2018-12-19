@@ -56,7 +56,7 @@ packages_required = [
 ]
 
 setup(name="registryaggregator",
-      version="0.3.0",
+      version="0.4.0",
       description="BBC implementation of an AMWA NMOS Registration API",
       url='https://github.com/bbc/nmos-registration',
       author='Peter Brightwell',
