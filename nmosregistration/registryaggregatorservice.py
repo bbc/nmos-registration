@@ -22,6 +22,7 @@ import time
 
 import os
 import json
+import copy
 
 import gevent
 from gevent import monkey
@@ -32,7 +33,8 @@ SERVICE_PORT = 8235
 DNS_SD_HTTP_PORT = 80
 DNS_SD_HTTPS_PORT = 443
 DNS_SD_NAME = 'registration_' + str(HOST)
-DNS_SD_TYPE = '_nmos-registration._tcp'
+DNS_SD_TYPE = '_nmos-register._tcp'
+DNS_SD_LEGACY_TYPE = '_nmos-registration._tcp'
 REGISTRY_PORT = 4001
 
 class RegistryAggregatorService(object):
@@ -78,20 +80,42 @@ class RegistryAggregatorService(object):
 
         print "Running on port: {}".format(self.httpServer.port)
 
+        self._advertise_mdns()
+
+    def _advertise_mdns(self):
         priority = self.config["priority"]
         if not str(priority).isdigit() or priority < 100:
             priority = 0
 
+        # Prepare the versions which still need to be advertised under the old type
+        # Prior to v1.3 the nmos-registration service type is necessary
+        legacy_apiversions = self._legacy_api_versions()
+
         if self.config["https_mode"] != "enabled" and self.config["enable_mdns"]:
             self.mdns.register(DNS_SD_NAME + "_http", DNS_SD_TYPE, DNS_SD_HTTP_PORT,
-                               {"pri": priority,
-                                "api_ver": ",".join(AGGREGATOR_APIVERSIONS),
-                                "api_proto": "http"})
+                               self._mdns_txt(priority, AGGREGATOR_APIVERSIONS, "http"))
+            if len(legacy_apiversions) > 0:
+                # Send out deprecated advertisement
+                self.mdns.register(DNS_SD_NAME + "_http_dep", DNS_SD_LEGACY_TYPE, DNS_SD_HTTP_PORT,
+                                   self._mdns_txt(priority, legacy_apiversions, "http"))
+
         if self.config["https_mode"] != "disabled" and self.config["enable_mdns"]:
             self.mdns.register(DNS_SD_NAME + "_https", DNS_SD_TYPE, DNS_SD_HTTPS_PORT,
-                               {"pri": priority,
-                                "api_ver": ",".join(AGGREGATOR_APIVERSIONS),
-                                "api_proto": "https"})
+                               self._mdns_txt(priority, AGGREGATOR_APIVERSIONS, "https"))
+            if len(legacy_apiversions) > 0:
+                # Send out deprecated advertisement
+                self.mdns.register(DNS_SD_NAME + "_https_dep", DNS_SD_LEGACY_TYPE, DNS_SD_HTTPS_PORT,
+                                   self._mdns_txt(priority, legacy_apiversions, "https"))
+
+    def _legacy_api_versions(self):
+        legacy_apiversions = ["v1.0", "v1.1", "v1.2"]
+        for api_ver in copy.copy(legacy_apiversions):
+            if api_ver not in AGGREGATOR_APIVERSIONS:
+                legacy_apiversions.remove(api_ver)
+        return legacy_apiversions
+
+    def _mdns_txt(self, priority, versions, protocol):
+        return {"pri": priority, "api_ver": ",".join(versions), "api_proto": protocol}
 
     def run(self):
         self.running = True

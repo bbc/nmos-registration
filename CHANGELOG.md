@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.6.0
+- Add support for new mDNS service type in v1.3
+
 ## 0.5.0
 - Add config option to enable/disable mDNS announcement
 
