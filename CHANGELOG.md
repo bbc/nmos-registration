@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.6.2
+- Update mDNS behaviour based on latest v1.3 draft
+
 ## 0.6.1
 - Update schemas for v1.3
 
