@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.6.3
+- Fix bug preventing use of priorities 1 through 99
+
 ## 0.6.2
 - Update mDNS behaviour based on latest v1.3 draft
 
