@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.6.4
+- Fix bug causing format validation to be skipped
+
 ## 0.6.3
 - Fix bug preventing use of priorities 1 through 99
 

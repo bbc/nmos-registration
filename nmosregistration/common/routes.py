@@ -75,7 +75,8 @@ class RoutesCommon(object):
             resource_type_plural = resource_type + "s"
 
             # Validate against the schema
-            jsonschema.validate(resource_data, self.api_schema.SCHEMA[resource_type])
+            jsonschema.validate(resource_data, self.api_schema.SCHEMA[resource_type],
+                                format_checker=jsonschema.draft4_format_checker)
 
             # Ensure any parents are present
             ok, message = self._ensure_parents(resource_type, resource_data)
