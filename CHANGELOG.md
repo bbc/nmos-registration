@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.6.5
+- Add missing dependency
+
 ## 0.6.4
 - Fix bug causing format validation to be skipped
 
