@@ -18,7 +18,7 @@ import os
 
 def load_fixture(filename, process=id):
     my_dir = os.path.dirname(os.path.realpath(__file__))
-    print "LOAD", os.path.join(my_dir, filename)
+    print("LOAD " + os.path.join(my_dir, filename))
     with open(os.path.join(my_dir, filename), "r") as fh:
         return process(fh)
 

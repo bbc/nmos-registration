@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
 from nmoscommon.utils import getLocalIP
 from nmoscommon.webapi import WebAPI, route
-from etcd_backend import EtcdInterface
+from .etcd_backend import EtcdInterface
 from nmosregistration.garbage import GarbageCollect
 
 from nmosregistration.v1_0 import routes as v1_0

@@ -17,8 +17,7 @@ The modifier performs changes to the incoming data to ensure it conforms to
 internal standard for the registry
 """
 
-import types
-
+from six import class_types
 
 class CustomModifier(object):
     def modify(self, data):
@@ -105,7 +104,7 @@ class RegModifier(object):
         return data
 
     def _modify_against_schema(self, data, schema):
-        for k, vtype in schema.iteritems():
+        for k, vtype in schema.items():
             if k in data.keys():
                 if type(vtype) is list:
                     for child_schema in vtype:
@@ -113,12 +112,12 @@ class RegModifier(object):
                             # Dict describes a subresource which has a schema
                             for child_data in data[k]:
                                 data[k][child_data] = self._modify_against_schema(child_data, child_schema)
-                        elif isinstance(child_schema, (type, types.ClassType)) and issubclass(child_schema, CustomModifier) and len(vtype) == 1:
+                        elif isinstance(child_schema, (type, class_types)) and issubclass(child_schema, CustomModifier) and len(vtype) == 1:
                             # List of attributes, each with the same modifier
                             custom = child_schema()
                             for index, val in enumerate(data[k]):
                                 data[k][index] = custom.modify(val)
-                elif isinstance(vtype, (type, types.ClassType)) and issubclass(vtype, CustomModifier):
+                elif isinstance(vtype, (type, class_types)) and issubclass(vtype, CustomModifier):
                     custom = vtype()
                     data[k] = custom.modify(data[k])
                 elif type(vtype) is dict:

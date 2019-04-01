@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+
 from gevent import monkey
 monkey.patch_all()
 
 import requests
 import json
 import gevent
-import urllib
+from six.moves.urllib.parse import urlencode
 
-from etcd_util import etcd_unpack
+from .etcd_util import etcd_unpack
 
 from requests.adapters import TimeoutSauce
 
@@ -65,7 +67,7 @@ class EtcdInterface(object):
         headers = {"content-type": "application/x-www-form-urlencoded"}
         url = "http://localhost:{}/v2/keys/resource/{}/{}".format(port, rtype, rkey)
         try:
-            r = requests.put(url, urllib.urlencode(data), headers=headers, proxies={'http': ''})
+            r = requests.put(url, urlencode(data), headers=headers, proxies={'http': ''})
         except (requests.ConnectionError, requests.HTTPError, requests.Timeout):
             raise self.RegistryUnavailable
         return r
@@ -120,7 +122,7 @@ class EtcdInterface(object):
         headers = {"content-type": "application/x-www-form-urlencoded"}
         url = "http://localhost:{}/v2/keys/health/{}".format(port, rkey)
         try:
-            r = requests.put(url, urllib.urlencode(data), headers=headers, proxies={'http': ''})
+            r = requests.put(url, urlencode(data), headers=headers, proxies={'http': ''})
         except (requests.ConnectionError, requests.HTTPError, requests.Timeout):
             raise self.RegistryUnavailable
         return r
@@ -158,7 +160,7 @@ class EtcdInterface(object):
         headers = {"content-type": "application/x-www-form-urlencoded"}
         url = "http://localhost:{}/v2/keys/{}".format(port, rkey)
         try:
-            r =  requests.put(url, urllib.urlencode(data), headers=headers, proxies={'http': ''})
+            r =  requests.put(url, urlencode(data), headers=headers, proxies={'http': ''})
         except (requests.ConnectionError, requests.HTTPError, requests.Timeout):
             raise self.RegistryUnavailable
         return r

@@ -53,11 +53,12 @@ packages_required = [
     "systemd>=0.16.1",
     "ws4py>=0.3.4",
     "requests>=0.9.3",
-    "jsonschema"
+    "jsonschema",
+    "six"
 ]
 
 setup(name="registryaggregator",
-      version="0.6.5",
+      version="0.6.6",
       description="BBC implementation of an AMWA NMOS Registration API",
       url='https://github.com/bbc/nmos-registration',
       author='Peter Brightwell',

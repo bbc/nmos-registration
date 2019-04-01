@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.6.6
+- Made to work with python 3
+
 ## 0.6.5
 - Add missing dependency
 
