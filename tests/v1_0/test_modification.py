@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from six import text_type
+
 import unittest
 import uuid
 import copy
@@ -33,12 +35,12 @@ class TestUuidCheck(unittest.TestCase):
 
     def test_lower(self):
         for i in range(100):
-            test_uuid = unicode(uuid.uuid4())
+            test_uuid = text_type(uuid.uuid4())
             self.assertEqual(self.check.modify(test_uuid), test_uuid)
 
     def test_upper(self):
         for i in range(100):
-            orig_uuid = unicode(uuid.uuid4())
+            orig_uuid = text_type(uuid.uuid4())
             test_uuid = orig_uuid.upper()
             self.assertEqual(self.check.modify(test_uuid), orig_uuid)
 

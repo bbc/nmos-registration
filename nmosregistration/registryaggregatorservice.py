@@ -60,7 +60,7 @@ class RegistryAggregatorService(object):
                 extra_config = json.loads(f.read())
                 self.config.update(extra_config)
         except Exception as e:
-            print "Exception loading config: {}".format(e)
+            print("Exception loading config: {}".format(e))
 
     def start(self):
         if self.running:
@@ -72,13 +72,13 @@ class RegistryAggregatorService(object):
         self.httpServer = HttpServer(AggregatorAPI, SERVICE_PORT, '0.0.0.0', api_args=[self.logger, self.config])
         self.httpServer.start()
         while not self.httpServer.started.is_set():
-            print 'Waiting for httpserver to start...'
+            print('Waiting for httpserver to start...')
             self.httpServer.started.wait()
 
         if self.httpServer.failed is not None:
             raise self.httpServer.failed
 
-        print "Running on port: {}".format(self.httpServer.port)
+        print("Running on port: {}".format(self.httpServer.port))
 
         self._advertise_mdns()
 
@@ -124,11 +124,11 @@ class RegistryAggregatorService(object):
         self.mdns.stop()
         self.mdns.close()
         self.httpServer.stop()
-        print "Stopped main()"
+        print("Stopped main()")
 
     def stop(self):
         self.running = False
 
     def sig_handler(self):
-        print 'Pressed ctrl+c'
+        print('Pressed ctrl+c')
         self.stop()

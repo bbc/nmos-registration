@@ -4,6 +4,7 @@
  Runs the following steps in parallel and reports results to GitHub:
  - Lint using flake8
  - Run Python 2.7 unit tests in tox
+ - Run Python 3 unit tests in tox
  - Build Debian packages for supported Ubuntu versions
 
  If these steps succeed and the master branch is being built, wheels and debs are uploaded to PyPI and the
@@ -59,6 +60,26 @@ pipeline {
                             post {
                                 always {
                                     bbcGithubNotify(context: "tests/py27", status: env.py27_result)
+                                }
+                            }
+                        }
+                        stage ("Python 3 Unit Tests") {
+                            steps {
+                                script {
+                                    env.py3_result = "FAILURE"
+                                }
+                                bbcGithubNotify(context: "tests/py3", status: "PENDING")
+                                // Use a workdirectory in /tmp to avoid shebang length limitation
+                                withBBCRDPythonArtifactory {
+                                    sh 'tox -e py3 --recreate --workdir /tmp/$(basename ${WORKSPACE})/tox-py3'
+                                }
+                                script {
+                                    env.py3_result = "SUCCESS" // This will only run if the sh above succeeded
+                                }
+                            }
+                            post {
+                                always {
+                                    bbcGithubNotify(context: "tests/py3", status: env.py3_result)
                                 }
                             }
                         }
@@ -143,7 +164,8 @@ pipeline {
                         bbcGithubNotify(context: "pypi/upload", status: "PENDING")
                         sh 'rm -rf dist/*'
                         bbcMakeGlobalWheel("py27")
-                        bbcTwineUpload(toxenv: "py27", pypi: true)
+                        bbcMakeGlobalWheel("py3")
+                        bbcTwineUpload(toxenv: "py3", pypi: true)
                         script {
                             env.pypiUpload_result = "SUCCESS" // This will only run if the steps above succeeded
                         }

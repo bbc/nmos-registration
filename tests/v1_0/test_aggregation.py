@@ -37,7 +37,7 @@ class MockLogger():
         self.lines.append(('INFO', message))
 
     def writeError(self, message):
-        print message
+        print(message)
         self.lines.append(('ERROR', message))
 
     def hasLine(self, level, message):
