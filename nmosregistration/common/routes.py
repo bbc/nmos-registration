@@ -18,9 +18,9 @@ import jsonschema
 
 from flask import request, abort, make_response
 
-from nmoscommon.webapi import route, jsonify, traceback, returns_json
+from nmoscommon.webapi import route, jsonify, traceback
+from nmoscommon.auth.nmos_auth import RequiresAuth
 
-from nmosregistration.etcd_util import etcd_unpack
 from nmosregistration.modifier import RegModifier
 from nmosregistration.common import schema
 
@@ -86,9 +86,13 @@ class RoutesCommon(object):
             # Add in the API version we are registering with
             resource_data['@_apiversion'] = self.api_version
 
-            reg_response = self.registry.put(resource_type_plural, resource_id, json.dumps(resource_data), port=REGISTRY_PORT)
+            reg_response = self.registry.put(
+                resource_type_plural, resource_id, json.dumps(resource_data), port=REGISTRY_PORT
+            )
             reg_response.autocorrect_location_header = False
-            reg_response.headers["Location"] = "/x-nmos/registration/{}/resource/{}/{}/".format(self.api_version, resource_type_plural, resource_id)
+            reg_response.headers["Location"] = "/x-nmos/registration/{}/resource/{}/{}/".format(
+                self.api_version, resource_type_plural, resource_id
+            )
 
             self.logger.writeInfo("register {} {}: {}".format(resource_type, resource_id, reg_response.status_code))
 
@@ -138,7 +142,7 @@ class RoutesCommon(object):
                     self.logger.writeDebug("heartbeat: node '{}' did not exist".format(node_id))
                     return 404
 
-        elif r.status_code not in [201,200]:
+        elif r.status_code not in [201, 200]:
             self.logger.writeWarning("couldn't register heartbeat ({}: {})".format(r.status_code, r.reason))
             return 404
 
@@ -164,9 +168,10 @@ class RoutesCommon(object):
 
     @route('/')
     def __versionroot(self):
-        return [ 'resource/', 'health/' ]
+        return ['resource/', 'health/']
 
     @route('/resource', methods=['GET', 'POST'], auto_json=False)
+    @RequiresAuth()
     def __resource(self):
         if request.method == 'POST':
             r = self._add_resource(request.get_data())
@@ -185,13 +190,13 @@ class RoutesCommon(object):
                 self.logger.writeInfo("POST resource response: {}".format(r.content))
                 abort(r.status_code)
         else:
-            return make_response(jsonify([ "{}s/".format(x) for x in VALID_TYPES ]), 200)
+            return make_response(jsonify(["{}s/".format(x) for x in VALID_TYPES]), 200)
 
     @route('/resource/<resource_type>')
     def __resource_type(self, resource_type):
         try:
             r = self.registry.getresources(resource_type)
-        except:
+        except Exception:
             traceback.print_exc()
             raise
         return r
@@ -206,7 +211,7 @@ class RoutesCommon(object):
         else:
             try:
                 r = self.registry.get(resource_type, rname)
-            except:
+            except Exception:
                 traceback.print_exc()
                 raise
 
@@ -216,7 +221,7 @@ class RoutesCommon(object):
 
     @route('/health/')
     def __health(self):
-        return ['nodes/',]
+        return ['nodes/', ]
 
     @route('/health/nodes/')
     def __health_type(self):
@@ -237,4 +242,4 @@ class RoutesCommon(object):
         if health is None:
             abort(404)
         else:
-            return { 'health' : health }
+            return {'health': health}
