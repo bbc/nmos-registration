@@ -130,11 +130,7 @@ class RegistryAggregatorService(object):
         self.running = False
 
     def sig_handler(self):
-<<<<<<< 7785af5d227ae10af2a7bdbffcd23210f0ec3490
-        print('Pressed ctrl+c')
-=======
         print("Pressed ctrl+c")
->>>>>>> bit of linting, added oauth decorator
         self.stop()
 
 
