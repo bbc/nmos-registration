@@ -175,7 +175,7 @@ class RoutesCommon(object):
     def __resource(self):
         if request.method == 'POST':
             r = self._add_resource(request.get_data())
-            if r.status_code/100 == 2:
+            if r.status_code / 100 == 2:
                 representation = json.loads(r.json()["node"]["value"])
                 # strip out any metadata
                 remove_keys = (x for x in representation.keys() if x.startswith("@_"))
@@ -205,7 +205,7 @@ class RoutesCommon(object):
     def __resource_type_name(self, resource_type, rname):
         if request.method == 'DELETE':
             r = self._delete(resource_type, rname)
-            if r.status_code/100 == 2:
+            if r.status_code / 100 == 2:
                 return (204, '')
             abort(r.status_code)
         else:

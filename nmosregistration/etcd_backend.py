@@ -26,6 +26,7 @@ from .etcd_util import etcd_unpack
 
 from requests.adapters import TimeoutSauce
 
+
 # Set global timeout
 class MyTimeout(TimeoutSauce):
     def __init__(self, *args, **kwargs):
@@ -33,7 +34,9 @@ class MyTimeout(TimeoutSauce):
         read = kwargs.get('read', connect)
         super(MyTimeout, self).__init__(connect=connect, read=read)
 
+
 requests.adapters.TimeoutSauce = MyTimeout
+
 
 def _prune_empty_branches(key, port=4001):
     """
@@ -62,8 +65,9 @@ class EtcdInterface(object):
 
     def put(self, rtype, rkey, value, ttl=None, port=4001):
         assert(rtype.endswith('s'))   # ensure that type is pluralised
-        data = { "value": value }
-        if ttl: data['ttl'] = ttl
+        data = {"value": value}
+        if ttl:
+            data['ttl'] = ttl
         headers = {"content-type": "application/x-www-form-urlencoded"}
         url = "http://localhost:{}/v2/keys/resource/{}/{}".format(port, rtype, rkey)
         try:
@@ -85,8 +89,8 @@ class EtcdInterface(object):
         assert(rtype.endswith('s'))   # ensure that type is pluralised
         url = "http://localhost:{}/v2/keys/resource/{}".format(port, rtype)
         try:
-            etcd_nodes = requests.get(url, proxies={'http': ''}).json().get('node', {'nodes' : []}).get('nodes', [])
-            keys = [ x['key'].split('/')[-1] for x in etcd_nodes if 'key' in x ]
+            etcd_nodes = requests.get(url, proxies={'http': ''}).json().get('node', {'nodes': []}).get('nodes', [])
+            keys = [x['key'].split('/')[-1] for x in etcd_nodes if 'key' in x]
         except (requests.ConnectionError, requests.HTTPError, requests.Timeout):
             raise self.RegistryUnavailable
         return keys
@@ -95,7 +99,7 @@ class EtcdInterface(object):
         assert(rtype.endswith('s'))   # ensure that type is pluralised
         url = "http://localhost:{}/v2/keys/resource/{}/{}?recursive=true".format(port, rtype, rkey)
         try:
-            r = requests.get(url, proxies={'http': ''}).json().get('node', {'value' : None}).get('value', None)
+            r = requests.get(url, proxies={'http': ''}).json().get('node', {'value': None}).get('value', None)
         except (requests.ConnectionError, requests.HTTPError, requests.Timeout):
             raise self.RegistryUnavailable
         if r is None:
@@ -114,11 +118,12 @@ class EtcdInterface(object):
         except (requests.ConnectionError, requests.HTTPError, requests.Timeout):
             raise self.RegistryUnavailable
 
-    ## Health
+    # Health
 
     def put_health(self, rkey, value, ttl=None, port=4001):
-        data = { "value": value }
-        if ttl: data['ttl'] = ttl
+        data = {"value": value}
+        if ttl:
+            data['ttl'] = ttl
         headers = {"content-type": "application/x-www-form-urlencoded"}
         url = "http://localhost:{}/v2/keys/health/{}".format(port, rkey)
         try:
@@ -136,7 +141,7 @@ class EtcdInterface(object):
             raise self.RegistryUnavailable
 
     def get_health(self, rkey, port=4001):
-        url = "http://localhost:{}/v2/keys/health/{}/?recursive=true".format(port,rkey)
+        url = "http://localhost:{}/v2/keys/health/{}/?recursive=true".format(port, rkey)
         try:
             r = requests.get(url, proxies={'http': ''})
         except (requests.ConnectionError, requests.HTTPError, requests.Timeout):
@@ -144,7 +149,7 @@ class EtcdInterface(object):
 
         if r is None:
             return None
-        return r.json().get("node",{}).get("value", None)
+        return r.json().get("node", {}).get("value", None)
 
     def put_garbage_collection_flag(self, host, ttl, port=4001):
         # See https://github.com/coreos/etcd/blob/master/Documentation/api.md#atomic-compare-and-swap
@@ -155,12 +160,13 @@ class EtcdInterface(object):
 
     # TODO: a lot could be re-cast to use this
     def put_raw(self, rkey, value, ttl=None, port=4001):
-        data = { "value": value }
-        if ttl: data['ttl'] = ttl
+        data = {"value": value}
+        if ttl:
+            data['ttl'] = ttl
         headers = {"content-type": "application/x-www-form-urlencoded"}
         url = "http://localhost:{}/v2/keys/{}".format(port, rkey)
         try:
-            r =  requests.put(url, urlencode(data), headers=headers, proxies={'http': ''})
+            r = requests.put(url, urlencode(data), headers=headers, proxies={'http': ''})
         except (requests.ConnectionError, requests.HTTPError, requests.Timeout):
             raise self.RegistryUnavailable
         return r
@@ -168,7 +174,7 @@ class EtcdInterface(object):
     def delete_raw(self, rkey, port=4001):
         url = "http://localhost:{}/v2/keys/{}?recursive=true".format(port, rkey)
         try:
-            r =  requests.delete(url, proxies={'http': ''})
+            r = requests.delete(url, proxies={'http': ''})
         except (requests.ConnectionError, requests.HTTPError, requests.Timeout):
             raise self.RegistryUnavailable
 

@@ -59,12 +59,12 @@ class AggregatorAPI(WebAPI):
 
     @route('/')
     def __root(self):
-        return (200, [AGGREGATOR_APINAMESPACE+"/"])
+        return (200, [AGGREGATOR_APINAMESPACE + "/"])
 
-    @route('/'+AGGREGATOR_APINAMESPACE+'/')
+    @route('/' + AGGREGATOR_APINAMESPACE + '/')
     def __namespaceroot(self):
-        return (200, [AGGREGATOR_APINAME+"/"])
+        return (200, [AGGREGATOR_APINAME + "/"])
 
-    @route('/'+AGGREGATOR_APINAMESPACE+'/'+AGGREGATOR_APINAME+'/')
+    @route('/' + AGGREGATOR_APINAMESPACE + '/' + AGGREGATOR_APINAME + '/')
     def __nameroot(self):
         return (200, [api_version + "/" for api_version in AGGREGATOR_APIVERSIONS])

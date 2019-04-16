@@ -15,23 +15,25 @@
 
 def etcd_unpack(obj):
     """Take a JSON response object (as a dict) from etcd, and transform
-    into a dict without the associated etcd cruft.
+into a dict without the associated etcd cruft.
 
-    >>> etcd_unpack({})
-    {}
-    >>> etcd_unpack({'node': { 'key': 'a', 'value': 'AA'}})
-    {'a': 'AA'}
-    >>> etcd_unpack({'node': {'nodes': [{'value': 'a', 'key': 'A'}, {'value': 'B', 'key': 'b'}], 'dir': True, 'key': 'pa'}})
-    {'pa': {'A': 'a', 'b': 'B'}}
-    >>> etcd_unpack({'node': {'nodes': [{'nodes': [{'value': 'a', 'key': 'A'}], 'dir': True, 'key': 'pa'}], 'dir': True, 'key': 'paa'}})
-    {'paa': {'pa': {'A': 'a'}}}
-    >>> etcd_unpack({'node': {'dir': True, 'key': '/resource/flow'}})
-    {'/resource/flow': {}}
-    """
+>>> etcd_unpack({})
+{}
+>>> etcd_unpack({'node': { 'key': 'a', 'value': 'AA'}})
+{'a': 'AA'}
+>>> etcd_unpack({'node': {'nodes': [{'value': 'a', 'key': 'A'}, {'value': 'B', 'key': 'b'}], 'dir': True, 'key': 'pa'}})
+{'pa': {'A': 'a', 'b': 'B'}}
+>>> etcd_unpack(
+    {'node': {'nodes': [{'nodes': [{'value': 'a', 'key': 'A'}], 'dir': True, 'key': 'pa'}], 'dir': True, 'key': 'paa'}}
+)
+{'paa': {'pa': {'A': 'a'}}}
+>>> etcd_unpack({'node': {'dir': True, 'key': '/resource/flow'}})
+{'/resource/flow': {}}
+"""
     def _unpack_lst(n):
         rv = {}
         for v in n:
-            if not 'dir' in v:
+            if 'dir' not in v:
                 rv[v['key']] = v['value']
             elif 'nodes' in v:
                 rv[v['key']] = _unpack_lst(v['nodes'])
@@ -39,11 +41,11 @@ def etcd_unpack(obj):
                 rv[v['key']] = {}
         return rv
 
-    if not 'node' in obj:
+    if 'node' not in obj:
         return {}
 
     n = obj['node']
-    if not 'dir' in n:
+    if 'dir' not in n:
         return {n['key']: n['value']}
     elif 'nodes' in n:
         return {n['key']: _unpack_lst(n['nodes'])}
