@@ -18,6 +18,7 @@ import jsonschema
 from nmosregistration.v1_3 import schema
 from . import util
 
+
 class SchemaValidCase(unittest.TestCase):
 
     def assertValidates(self, obj, against):

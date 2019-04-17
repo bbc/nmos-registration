@@ -17,14 +17,13 @@ from __future__ import absolute_import
 from gevent import monkey
 monkey.patch_all()
 
-import requests
-import json
-import gevent
-from six.moves.urllib.parse import urlencode
+import requests # noqa E402
+from requests.adapters import TimeoutSauce # noqa E402
+import json # noqa E402
+import gevent # noqa E402
+from six.moves.urllib.parse import urlencode # noqa E402
 
-from .etcd_util import etcd_unpack
-
-from requests.adapters import TimeoutSauce
+from .etcd_util import etcd_unpack # noqa E402
 
 
 # Set global timeout
