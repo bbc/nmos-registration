@@ -23,6 +23,7 @@ from werkzeug.wrappers import Response
 
 REGISTRY_PORT = 4001
 
+
 class MockLogger():
     def __init__(self):
         self.lines = []
@@ -105,10 +106,19 @@ class TestAggregatorAPI(unittest.TestCase):
         }
         self.api._add_resource(json.dumps(resource))
         expected = [
-            ('put',
-                (u'nodes', u'' + key, '{{"version": "1442328230:920000000", "label": "test", "href": "http://127.0.0.1:8080", "@_apiversion": "v1.0", "services": [], "caps": {}, "id": "{}"}}'.format({}, key)),
-                {'port': REGISTRY_PORT}),
-            ('put_health', (key, int(time.time())), {'port': 4001, 'ttl': 12})
+            (
+                'put', (
+                    u'nodes',
+                    u'' + key,
+                    '{{"version": "1442328230:920000000", "label": "test", "href": "http://127.0.0.1:8080", "@_apiversion": "v1.0", "services": [], "caps": {}, "id": "{}"}}'.format({}, key) # noqa E402
+                ),
+                {'port': REGISTRY_PORT}
+            ),
+            (
+                'put_health',
+                (key, int(time.time())),
+                {'port': 4001, 'ttl': 12}
+            )
         ]
         self.assertEqual(len(expected), len(self.mock_registry.invocations))
         for request, response in zip(expected, self.mock_registry.invocations):
@@ -129,14 +139,25 @@ class TestAggregatorAPI(unittest.TestCase):
             }
         }
         self.api._add_resource(json.dumps(resource))
-        #expected = [
-        #    ('put',
-        #        (u'nodes', u'' + key.lower(), '{{"version": "1442328230:920000000", "label": "test", "href": "http://127.0.0.1:8080", "@_apiversion": "v1.0", "services": [], "caps": {}, "id": "{}"}}'.format({}, key.lower())),
-        #        {'port': REGISTRY_PORT}),
-        #    ('put_health', (key.lower(), int(time.time())), {'port': 4001, 'ttl': 12})
-        #]
-        self.assertEqual(key.lower(), self.mock_registry.invocations[0][1][1]) # Check key in PUT is lowercase
-        self.assertEqual(key.lower(), json.loads(self.mock_registry.invocations[0][1][2])['id']) # Check ID within Node object is lowercase
+        # expected = [
+        #     (
+        #         'put', (
+        #                     u'nodes',
+        #                     u'' + key.lower(),
+        #                     '{{"version": "1442328230:920000000", "label": "test", "href": "http://127.0.0.1:8080", "@_apiversion": "v1.0", "services": [], "caps": {}, "id": "{}"}}'.format({}, key.lower()) # noqa E402
+        #                 ),
+        #         {'port': REGISTRY_PORT}
+        #     ),
+        #     (
+        #         'put_health',
+        #         (key.lower(), int(time.time())),
+        #         {'port': 4001, 'ttl': 12}
+        #     )
+        # ]
+        # Check key in PUT is lowercase
+        self.assertEqual(key.lower(), self.mock_registry.invocations[0][1][1])
+        # Check ID within Node object is lowercase
+        self.assertEqual(key.lower(), json.loads(self.mock_registry.invocations[0][1][2])['id'])
 
     def test_add_resource_non_type(self):
         """Attempting to register resources of a non-supported type aborts"""
@@ -180,14 +201,19 @@ class TestAggregatorAPI_NoRegistry(unittest.TestCase):
                 'services': [],
                 'id': key
             }
-        };
+        }
         with self.assertRaises(HTTPException) as cm:
             self.api._add_resource(json.dumps(resource))
         self.assertEqual(500, cm.exception.code)
         expected = [
-            ('put',
-                (u'nodes', u'' + key, '{{"version": "1442328230:920000000", "label": "test", "href": "http://127.0.0.1:8080", "@_apiversion": "v1.0", "services": [], "caps": {}, "id": "{}"}}'.format({}, key)),
-                {'port': REGISTRY_PORT})
+            (
+                'put', (
+                    u'nodes',
+                    u'' + key,
+                    '{{"version": "1442328230:920000000", "label": "test", "href": "http://127.0.0.1:8080", "@_apiversion": "v1.0", "services": [], "caps": {}, "id": "{}"}}'.format({}, key) # noqa E402
+                ),
+                {'port': REGISTRY_PORT}
+            )
         ]
         self.assertEqual(len(expected), len(self.mock_registry.invocations))
         for request, response in zip(expected, self.mock_registry.invocations):

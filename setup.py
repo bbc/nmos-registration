@@ -17,14 +17,12 @@
 from __future__ import print_function
 from setuptools import setup
 import os
-import sys
 
 
 def is_package(path):
     return (
-        os.path.isdir(path) and
-        os.path.isfile(os.path.join(path, '__init__.py'))
-        )
+        os.path.isdir(path) and os.path.isfile(os.path.join(path, '__init__.py'))
+    )
 
 
 def find_packages(path, base=""):
@@ -57,19 +55,20 @@ packages_required = [
     "six"
 ]
 
-setup(name="registryaggregator",
-      version="0.6.6",
-      description="BBC implementation of an AMWA NMOS Registration API",
-      url='https://github.com/bbc/nmos-registration',
-      author='Peter Brightwell',
-      author_email='peter.brightwell@bbc.co.uk',
-      license='Apache 2',
-      packages=package_names,
-      package_dir=packages,
-      install_requires=packages_required,
-      scripts=[],
-      data_files=[
+setup(
+    name="registryaggregator",
+    version="0.7.0",
+    description="BBC implementation of an AMWA NMOS Registration API",
+    url='https://github.com/bbc/nmos-registration',
+    author='Peter Brightwell',
+    author_email='peter.brightwell@bbc.co.uk',
+    license='Apache 2',
+    packages=package_names,
+    package_dir=packages,
+    install_requires=packages_required,
+    scripts=[],
+    data_files=[
         ('/usr/bin', ['bin/nmosregistration'])
-      ],
-      long_description="Provides a service implementing the NMOS Registration API"
-      )
+    ],
+    long_description="Provides a service implementing the NMOS Registration API"
+)

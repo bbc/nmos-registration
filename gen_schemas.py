@@ -16,6 +16,7 @@ import sys
 import json
 import pprint
 
+
 def get_schema(name, dir):
 
     def process(obj):

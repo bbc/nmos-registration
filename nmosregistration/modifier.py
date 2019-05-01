@@ -19,6 +19,7 @@ internal standard for the registry
 
 from six import class_types
 
+
 class CustomModifier(object):
     def modify(self, data):
         return data
@@ -112,7 +113,11 @@ class RegModifier(object):
                             # Dict describes a subresource which has a schema
                             for child_data in data[k]:
                                 data[k][child_data] = self._modify_against_schema(child_data, child_schema)
-                        elif isinstance(child_schema, (type, class_types)) and issubclass(child_schema, CustomModifier) and len(vtype) == 1:
+                        elif (
+                                isinstance(child_schema, (type, class_types)) and
+                                issubclass(child_schema, CustomModifier) and
+                                len(vtype) == 1
+                        ):
                             # List of attributes, each with the same modifier
                             custom = child_schema()
                             for index, val in enumerate(data[k]):

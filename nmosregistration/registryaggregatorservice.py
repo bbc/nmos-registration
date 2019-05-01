@@ -22,7 +22,6 @@ import time
 
 import os
 import json
-import copy
 
 import gevent
 from gevent import monkey
@@ -37,15 +36,16 @@ DNS_SD_TYPE = '_nmos-register._tcp'
 DNS_SD_LEGACY_TYPE = '_nmos-registration._tcp'
 REGISTRY_PORT = 4001
 
+
 class RegistryAggregatorService(object):
     def __init__(self, logger=None, interactive=False):
-        self.config      = {"priority": 0, "https_mode": "disabled", "enable_mdns": True}
+        self.config = {"priority": 0, "https_mode": "disabled", "enable_mdns": True}
         self._load_config()
-        self.running     = False
-        self.httpServer  = None
+        self.running = False
+        self.httpServer = None
         self.interactive = interactive
-        self.mdns        = MDNSEngine()
-        self.logger      = Logger("aggregation", logger)
+        self.mdns = MDNSEngine()
+        self.logger = Logger("aggregation", logger)
 
     def _load_config(self):
         try:
@@ -64,7 +64,7 @@ class RegistryAggregatorService(object):
 
     def start(self):
         if self.running:
-            gevent.signal(signal.SIGINT,  self.sig_handler)
+            gevent.signal(signal.SIGINT, self.sig_handler)
             gevent.signal(signal.SIGTERM, self.sig_handler)
 
         self.mdns.start()
@@ -72,7 +72,7 @@ class RegistryAggregatorService(object):
         self.httpServer = HttpServer(AggregatorAPI, SERVICE_PORT, '0.0.0.0', api_args=[self.logger, self.config])
         self.httpServer.start()
         while not self.httpServer.started.is_set():
-            print('Waiting for httpserver to start...')
+            print("Waiting for httpserver to start...")
             self.httpServer.started.wait()
 
         if self.httpServer.failed is not None:
@@ -130,5 +130,10 @@ class RegistryAggregatorService(object):
         self.running = False
 
     def sig_handler(self):
-        print('Pressed ctrl+c')
+        print("Pressed ctrl+c")
         self.stop()
+
+
+if __name__ == '__main__':
+    service = RegistryAggregatorService()
+    service.run()

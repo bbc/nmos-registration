@@ -29,11 +29,11 @@ class TooLong(Exception):
 class GarbageCollect(object):
 
     parent_tab = {
-        'devices':   [('nodes', 'node_id')],
-        'senders':   [('devices', 'device_id')],
+        'devices': [('nodes', 'node_id')],
+        'senders': [('devices', 'device_id')],
         'receivers': [('devices', 'device_id')],
-        'sources':   [('devices', 'device_id')],
-        'flows':     [('devices', 'device_id'), ('sources', 'source_id')]
+        'sources': [('devices', 'device_id')],
+        'flows': [('devices', 'device_id'), ('sources', 'source_id')]
     }
 
     def __init__(self, registry, identifier, logger=None, interval=INTERVAL):
@@ -161,7 +161,10 @@ class GarbageCollect(object):
             # Get parent for child. There is only ever one; anything with multiple
             # parent entries in the parent table has multiple entries for backward
             # compatibility, in order strongest->weakest.
-            parents = [(parent_type, child.get(parent_key)) for parent_type, parent_key in self.parent_tab.get(child_type, (None, None))]
+            parents = [
+                (parent_type, child.get(parent_key))
+                for parent_type, parent_key in self.parent_tab.get(child_type, (None, None))
+            ]
             parent = next((x for x in parents if x[1] is not None), None)
             if parent is None or not is_alive(parent):
                 kill_q.append((child_type, child_id))

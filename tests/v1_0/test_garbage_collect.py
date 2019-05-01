@@ -16,6 +16,7 @@ import unittest
 
 from nmosregistration.garbage import GarbageCollect
 
+
 class MockDataBackend():
 
     class RegistryUnavailable(Exception):
@@ -47,6 +48,7 @@ class MockDataBackend():
     def put_obj(self, value):
         exist = self._data.setdefault(value['type'] + 's', [])
         exist.append(value['data'])
+
 
 class GarbageCollectionTest(unittest.TestCase):
 
@@ -254,7 +256,6 @@ class GarbageCollectionTest(unittest.TestCase):
                 res = self._registry.get(r['type'] + 's', r['data']['id'])
                 self.assertIsNone(res)
 
-
     def _setup_flow_in_tree(self, source_parent, device_parent):
         self._registry.set_data({'/health': {'/health/33279d1d-1be9-43eb-9ac5-7c7a5a80a2c5': '0'}})
         for r in self.tree_resources:
@@ -316,6 +317,7 @@ class GarbageCollectionTest(unittest.TestCase):
         self._setup_flow_in_tree('de092973-f230-4e84-b087-80e41f0e2940', None)
         self._collector._collect()
         self.assertIsNone(self._registry.get('flows', 'e9dbe3eb-5ee1-4e90-99e6-7f480cee99d1'))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -20,6 +20,7 @@ import copy
 
 import nmosregistration.modifier as modifier
 
+
 class StdoutLogger:
     def writeDebug(self, s):
         print(s)
@@ -126,6 +127,7 @@ class TestModification(unittest.TestCase):
         resource = copy.deepcopy(orig_resource)
         resource["data"]["id"] = resource["data"]["id"].upper()
         self.assertEqual(orig_resource, self.modifier.modify(resource))
+
 
 if __name__ == '__main__':
     unittest.main()
