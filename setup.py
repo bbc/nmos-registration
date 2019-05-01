@@ -21,8 +21,7 @@ import os
 
 def is_package(path):
     return (
-        os.path.isdir(path) and
-        os.path.isfile(os.path.join(path, '__init__.py'))
+        os.path.isdir(path) and os.path.isfile(os.path.join(path, '__init__.py'))
     )
 
 
@@ -58,7 +57,7 @@ packages_required = [
 
 setup(
     name="registryaggregator",
-    version="0.6.7",
+    version="0.7.0",
     description="BBC implementation of an AMWA NMOS Registration API",
     url='https://github.com/bbc/nmos-registration',
     author='Peter Brightwell',

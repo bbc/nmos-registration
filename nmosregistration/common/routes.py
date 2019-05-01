@@ -202,6 +202,7 @@ class RoutesCommon(object):
         return r
 
     @route('/resource/<resource_type>/<rname>', methods=['GET', 'DELETE'])
+    @RequiresAuth()
     def __resource_type_name(self, resource_type, rname):
         if request.method == 'DELETE':
             r = self._delete(resource_type, rname)
@@ -228,6 +229,7 @@ class RoutesCommon(object):
         return self.registry.getresources('nodes')
 
     @route('/health/nodes/<k>', methods=['GET', 'POST'])
+    @RequiresAuth()
     def __health_type_name(self, k):
         if request.method == 'POST':
             r = self._health(k)

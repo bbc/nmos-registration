@@ -135,5 +135,5 @@ class RegistryAggregatorService(object):
 
 
 if __name__ == '__main__':
-    Service = RegistryAggregatorService()
-    Service.run()
+    service = RegistryAggregatorService()
+    service.run()

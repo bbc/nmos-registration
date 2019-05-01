@@ -1,6 +1,6 @@
 # NMOS Registration API Implementation Changelog
 
-## 0.6.7
+## 0.7.0
 - Addition of OAuth2 security decorators and added linting stage to Jenkins CI
 
 ## 0.6.6
