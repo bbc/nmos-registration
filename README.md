@@ -26,9 +26,9 @@ The Registration API makes use of two configuration files. The first is native t
 
 The native Registration API configuration should consist of a JSON object in the file `/etc/ips-regaggregator/config.json`. The following attributes may be set within the object:
 
-*   **priority:** Sets a priority value for this Registration API instance between 0 and 255. A value of 100+ indicates a development rather than production instance. Default: 100.
-*   **https_mode:** Switches the API between HTTP and HTTPS operation. "disabled" indicates HTTP mode is in use, "enabled" indicates HTTPS mode is in use. Default: "disabled".
-*   **enable_mdns:** Provides a boolean parameter to disable mDNS announcements in an environment where unicast DNS is preferred. Default: true.
+*   **priority:** \[integer\] Sets a priority value for this Registration API instance between 0 and 255. A value of 100+ indicates a development rather than production instance. Default: 100.
+*   **https_mode:** \[string\] Switches the API between HTTP and HTTPS operation. "disabled" indicates HTTP mode is in use, "enabled" indicates HTTPS mode is in use. Default: "disabled".
+*   **enable_mdns:** \[boolean\] Provides a mechanism to disable mDNS announcements in an environment where unicast DNS is preferred. Default: true.
 
 An example configuration file is shown below:
 
