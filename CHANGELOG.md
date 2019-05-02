@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.7.1
+- Fix missing files in Python 3 Debian package
+
 ## 0.7.0
 - Addition of OAuth2 security decorators and added linting stage to Jenkins CI
 
