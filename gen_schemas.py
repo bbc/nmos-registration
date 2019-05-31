@@ -44,8 +44,8 @@ if __name__ == '__main__':
     for name in supported_types:
         schema[name] = get_schema("{}.json".format(name), schema_dir)
 
-    print '"""'
-    print 'Defines mapping of resource types to schema'
-    print 'Generated. Do not edit!'
-    print '"""'
-    print 'SCHEMA = ', pprint.pprint(schema)
+    print('"""')
+    print('Defines mapping of resource types to schema')
+    print('Generated. Do not edit!')
+    print('"""')
+    print('SCHEMA = ', pprint.pprint(schema))

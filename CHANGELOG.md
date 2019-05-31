@@ -1,7 +1,10 @@
 # NMOS Registration API Implementation Changelog
 
-## 0.7.2
+## 0.7.3
 - Add systemd ready notification when service has started
+
+## 0.7.2
+- Add Python3 linting stage to CI, fix linting
 
 ## 0.7.1
 - Fix missing files in Python 3 Debian package

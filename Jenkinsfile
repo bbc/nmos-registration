@@ -41,24 +41,42 @@ pipeline {
         }
         stage ("Tests") {
             parallel {
-              stage ("Linting Check") {
-                  steps {
-                      script {
-                          env.lint_result = "FAILURE"
-                      }
-                      bbcGithubNotify(context: "lint/flake8", status: "PENDING")
-                      // Run the linter, excluding build and test directories, and generated schema (this can also go in the .flake8 config file)
-                      sh 'flake8'
-                      script {
-                          env.lint_result = "SUCCESS" // This will only run if the sh above succeeded
-                      }
-                  }
-                  post {
-                      always {
-                          bbcGithubNotify(context: "lint/flake8", status: env.lint_result)
-                      }
-                  }
-              }
+                stage ("Py2.7 Linting Check") {
+                    steps {
+                        script {
+                            env.lint27_result = "FAILURE"
+                        }
+                        bbcGithubNotify(context: "lint/flake8_27", status: "PENDING")
+                        // Run the linter
+                        sh 'python2.7 -m flake8'
+                        script {
+                            env.lint27_result = "SUCCESS" // This will only run if the sh above succeeded
+                        }
+                    }
+                    post {
+                        always {
+                            bbcGithubNotify(context: "lint/flake8_27", status: env.lint27_result)
+                        }
+                    }
+                }
+                stage ("Py3 Linting Check") {
+                    steps {
+                        script {
+                            env.lint3_result = "FAILURE"
+                        }
+                        bbcGithubNotify(context: "lint/flake8_3", status: "PENDING")
+                        // Run the linter
+                        sh 'python3 -m flake8'
+                        script {
+                            env.lint3_result = "SUCCESS" // This will only run if the sh above succeeded
+                        }
+                    }
+                    post {
+                        always {
+                            bbcGithubNotify(context: "lint/flake8_3", status: env.lint3_result)
+                        }
+                    }
+                }
                 stage ("Unit Tests") {
                     stages {
                         stage ("Python 2.7 Unit Tests") {
