@@ -20,6 +20,14 @@ from nmoscommon.logger import Logger
 import signal
 import time
 
+# Handle if systemd is installed instead of newer cysystemd
+try:
+    from cysystemd import daemon
+    SYSTEMD_READY = daemon.Notification.READY
+except ImportError:
+    from systemd import daemon
+    SYSTEMD_READY = "READY=1"
+
 import os
 import json
 
@@ -116,6 +124,7 @@ class RegistryAggregatorService(object):
     def run(self):
         self.running = True
         self.start()
+        daemon.notify(SYSTEMD_READY)
         while self.running:
             time.sleep(1)
         self._cleanup()
