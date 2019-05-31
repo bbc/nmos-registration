@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.7.3
+- Add systemd ready notification when service has started
+
 ## 0.7.2
 - Add Python3 linting stage to CI, fix linting
 

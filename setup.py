@@ -48,7 +48,7 @@ packages_required = [
     "gevent>=1.2.2",
     "nmoscommon>=0.6.0",
     "flask>=0.10.1",
-    "systemd>=0.16.1",
+    "cysystemd",
     "ws4py>=0.3.4",
     "requests>=0.9.3",
     "jsonschema",
@@ -57,7 +57,7 @@ packages_required = [
 
 setup(
     name="registryaggregator",
-    version="0.7.2",
+    version="0.7.3",
     description="BBC implementation of an AMWA NMOS Registration API",
     url='https://github.com/bbc/nmos-registration',
     author='Peter Brightwell',
