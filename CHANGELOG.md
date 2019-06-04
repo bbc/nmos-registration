@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.7.4
+- Move NMOS packages from recommends to depends
+
 ## 0.7.3
 - Add systemd ready notification when service has started
 
