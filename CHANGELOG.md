@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.7.5
+- Fix python3 errors
+
 ## 0.7.4
 - Move NMOS packages from recommends to depends
 

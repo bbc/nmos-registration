@@ -46,7 +46,7 @@ Exit this console by pressing ^D to quit.""")
         try:
             f = open(args.pidfile, 'w')
         except:
-            print "Could not open pid file, continuing"
+            print("Could not open pid file, continuing")
         else:
             pid = os.getpid()
             f.write(str(pid)+"\n")
