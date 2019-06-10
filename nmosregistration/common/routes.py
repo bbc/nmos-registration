@@ -174,11 +174,14 @@ class RoutesCommon(object):
     @RequiresAuth()
     def __resource(self):
         if request.method == 'POST':
-            r = self._add_resource(request.get_data())
-            if r.status_code / 100 == 2:
+            req_data = request.get_data()
+            if type(req_data) is not str:
+                req_data = req_data.decode('ascii')
+            r = self._add_resource(req_data)
+            if r.status_code // 100 == 2:
                 representation = json.loads(r.json()["node"]["value"])
                 # strip out any metadata
-                remove_keys = (x for x in representation.keys() if x.startswith("@_"))
+                remove_keys = (x for x in list(representation) if x.startswith("@_"))
                 for k in remove_keys:
                     del representation[k]
                 response = make_response(jsonify(representation), r.status_code)
@@ -188,7 +191,7 @@ class RoutesCommon(object):
 
             else:
                 self.logger.writeInfo("POST resource response: {}".format(r.content))
-                abort(r.status_code)
+                return '', r.status_code
         else:
             return make_response(jsonify(["{}s/".format(x) for x in VALID_TYPES]), 200)
 
