@@ -191,7 +191,7 @@ class RoutesCommon(object):
 
             else:
                 self.logger.writeInfo("POST resource response: {}".format(r.content))
-                return '', r.status_code
+                abort(r.status_code)
         else:
             return make_response(jsonify(["{}s/".format(x) for x in VALID_TYPES]), 200)
 
@@ -209,7 +209,7 @@ class RoutesCommon(object):
     def __resource_type_name(self, resource_type, rname):
         if request.method == 'DELETE':
             r = self._delete(resource_type, rname)
-            if r.status_code / 100 == 2:
+            if r.status_code // 100 == 2:
                 return (204, '')
             abort(r.status_code)
         else:
