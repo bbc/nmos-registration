@@ -52,7 +52,8 @@ packages_required = [
     "ws4py>=0.3.4",
     "requests>=0.9.3",
     "jsonschema",
-    "six"
+    "six",
+    "couchbase",
 ]
 
 setup(
