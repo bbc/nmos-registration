@@ -1,0 +1,10 @@
+version: '2'
+services:
+  couchbase:
+    container_name: couchbase_test
+    ports:
+      - '8091-8094:8091-8094'
+      - '11207:11207'
+      - '11210-11211:11210-11211'
+      - '18091-18093:18091-18093'
+    image: couchbase:community-6.0.0
