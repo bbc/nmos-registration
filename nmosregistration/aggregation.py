@@ -17,6 +17,7 @@ from __future__ import absolute_import
 from nmoscommon.utils import getLocalIP
 from nmoscommon.webapi import WebAPI, route
 from .etcd_backend import EtcdInterface
+from .couchbase_backend import CouchbaseInterface
 from nmosregistration.garbage import GarbageCollect
 
 from nmosregistration.v1_0 import routes as v1_0
@@ -38,23 +39,32 @@ if _config.get("https_mode", "disabled") == "enabled":
 
 class AggregatorAPI(WebAPI):
 
-    def __init__(self, logger, config, registry=EtcdInterface()):
+    def __init__(self, logger, config):
+        if config['registry']['type'] == 'couchbase':
+            registry = CouchbaseInterface(
+                cluster_address=config['registry']['hosts'],
+                username=config['registry']['username'],
+                password=config['registry']['password'],
+                bucket=config['registry']['bucket']
+            )
+        else:
+            registry = EtcdInterface()
         super(AggregatorAPI, self).__init__()
         self._config = config
 
         garbage_collect_interval = int(self._config.get("garbage_collect_interval", 10))
         self._garbage_collector = GarbageCollect(identifier=HOST, registry=registry, interval=garbage_collect_interval)
 
-        self._v1_0_api = v1_0.Routes(logger=logger, registry=registry)
+        self._v1_0_api = v1_0.Routes(logger=logger, registry=registry, registry_type=config['registry']['type'])
         self.add_routes(self._v1_0_api, basepath="/x-nmos/registration/v1.0")
 
-        self._v1_1_api = v1_1.Routes(logger=logger, registry=registry)
+        self._v1_1_api = v1_1.Routes(logger=logger, registry=registry, registry_type=config['registry']['type'])
         self.add_routes(self._v1_1_api, basepath="/x-nmos/registration/v1.1")
 
-        self._v1_2_api = v1_2.Routes(logger=logger, registry=registry)
+        self._v1_2_api = v1_2.Routes(logger=logger, registry=registry, registry_type=config['registry']['type'])
         self.add_routes(self._v1_2_api, basepath="/x-nmos/registration/v1.2")
 
-        self._v1_3_api = v1_3.Routes(logger=logger, registry=registry)
+        self._v1_3_api = v1_3.Routes(logger=logger, registry=registry, registry_type=config['registry']['type'])
         self.add_routes(self._v1_3_api, basepath="/x-nmos/registration/v1.3")
 
     @route('/')

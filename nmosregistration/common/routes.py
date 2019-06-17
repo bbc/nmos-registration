@@ -34,9 +34,10 @@ NODE_SEEN_TTL = 12  # seconds until a node considered "dead".
 
 class RoutesCommon(object):
 
-    def __init__(self, logger, registry, api_version="v1.0", api_schema=schema):
+    def __init__(self, logger, registry, api_version="v1.0", api_schema=schema, registry_type="etcd"):
         self.logger = logger
         self.registry = registry
+        self.registry_type = registry_type
         self.modifier = RegModifier(logger=self.logger)
         self.api_version = api_version
         self.api_schema = api_schema
@@ -88,16 +89,18 @@ class RoutesCommon(object):
 
             # Add in the API version we are registering with
             resource_data['@_apiversion'] = self.api_version
-
+            
             reg_response = self.registry.put(
                 resource_type_plural, resource_id, json.dumps(resource_data), port=REGISTRY_PORT
             )
-            reg_response.autocorrect_location_header = False
-            reg_response.headers["Location"] = "/x-nmos/registration/{}/resource/{}/{}/".format(
-                self.api_version, resource_type_plural, resource_id
-            )
+            
+            if self.registry_type == 'etcd':
+                reg_response.autocorrect_location_header = False
+                reg_response.headers["Location"] = "/x-nmos/registration/{}/resource/{}/{}/".format(
+                    self.api_version, resource_type_plural, resource_id
+                )
 
-            self.logger.writeInfo("register {} {}: {}".format(resource_type, resource_id, reg_response.status_code))
+                self.logger.writeInfo("register {} {}: {}".format(resource_type, resource_id, reg_response.status_code))
 
             # Add an initial heartbeat if this is a node resource
             if resource_type == 'node':

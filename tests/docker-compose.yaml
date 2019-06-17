@@ -2,6 +2,7 @@ version: '2'
 services:
   couchbase:
     container_name: couchbase_test
+    hostname: 127.0.0.1
     ports:
       - '8091-8094:8091-8094'
       - '11207:11207'
