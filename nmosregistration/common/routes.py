@@ -101,9 +101,9 @@ class RoutesCommon(object):
                 )
 
                 self.logger.writeInfo("register {} {}: {}".format(resource_type, resource_id, reg_response.status_code))
-
+            
             # Add an initial heartbeat if this is a node resource
-            if resource_type == 'node':
+            if self.registry_type == 'etcd' and resource_type == 'node':
                 hb_r = self.registry.put_health(resource_id, int(time.time()), ttl=NODE_SEEN_TTL, port=REGISTRY_PORT)
                 if hb_r.status_code not in [204, 201, 200]:
                     self.logger.writeWarning("could not add initial heartbeat: {}".format(hb_r))
