@@ -87,7 +87,7 @@ class TestAggregatorAPI(unittest.TestCase):
     def setUp(self):
         self.mock_log = MockLogger()
         self.mock_registry = MockRegistry()
-        self.api = v1_0.Routes(logger=self.mock_log, registry=self.mock_registry)
+        self.api = v1_0.Routes(logger=self.mock_log, registry=self.mock_registry, registry_type='etcd')
 
     def test_add_resource(self):
         """Adding a resource calls 'put' on registry"""

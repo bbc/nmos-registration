@@ -25,39 +25,78 @@ import gevent
 from six.moves.urllib.parse import urlencode
 import couchbase
 import time
+import string
 
-# Set global timeout
-class MyTimeout(TimeoutSauce):
-    def __init__(self, *args, **kwargs):
-        connect = kwargs.get('connect', 0.5)
-        read = kwargs.get('read', connect)
-        super(MyTimeout, self).__init__(connect=connect, read=read)
-
-requests.adapters.TimeoutSauce = MyTimeout
+def _strip_punctuation(input):
+    return input.translate(str.maketrans('', '', string.punctuation))
 
 class CouchbaseInterface(object):
-    def __init__(self, cluster_address, bucket, *args, **kwargs):
-        self.cluster = couchbase.cluster.Cluster(cluster_address)
-        self.registry = cluster.open_bucket(bucket)
+    def __init__(self, cluster_address, username, password, bucket, *args, **kwargs):
+        self.cluster = couchbase.cluster.Cluster('couchbase://{}'.format(','.join(cluster_address)))
+        auth = couchbase.cluster.PasswordAuthenticator(username, password)
+        self.cluster.authenticate(auth)
+        self.registry = self.cluster.open_bucket(bucket)
         self.bucket = bucket
 
-    def insert(self, rtype, rkey, value, ttl=12):
-        self.registry.insert(rkey, value, ttl=ttl) # TODO: Check for key conflict/break when fail due to
-        write_time = time.time_ns()
-        self.registry.mutate_in(rkey, couchbase.subdocument.upsert('last_updated', write_time, xattr=True))
-        self.registry.mutate_in(rkey, couchbase.subdocument.upsert('created_at', write_time, xattr=True))
-        self.registry.mutate_in(rkey, couchbase.subdocument.upsert('resource_type', rtype, xattr=True))
-        self.registry.mutate_in(rkey, couchbase.subdocument.upsert('node_id', 'hmmst', xattr=True)) # TODO: How?
+    def insert(self, rtype, rkey, value, xattrs, ttl=12):
+        try:
+            insert_result = self.registry.insert(rkey, value, ttl=ttl)
+        except couchbase.exceptions.KeyExistsError:
+            print('Insert error: the key ({}) already exists'.format(rkey))
+            return # TODO: Handle this better
+        if insert_result.success:
+            write_time = time.time()
+            subdoc_results = []
 
-    # Legacy put command warps around insert
-    def put(self, rtype, rkey, value, ttl=12):
-        self.insert(rtype, rkey, value, ttl)
+            subdoc_results.append(self.registry.mutate_in(
+                rkey,
+                couchbase.subdocument.upsert('last_updated', write_time, xattr=True)
+            ))
+            subdoc_results.append(self.registry.mutate_in(
+                rkey,
+                couchbase.subdocument.upsert('created_at', write_time, xattr=True)
+            ))
+            subdoc_results.append(self.registry.mutate_in(
+                rkey,
+                couchbase.subdocument.upsert('resource_type', rtype, xattr=True)
+            ))
+            subdoc_results.append(self.registry.mutate_in(
+                rkey,
+                couchbase.subdocument.upsert('node_id', 'hmmst', xattr=True)
+            )) # TODO: How?
+
+            # Store any additional extended attributes
+            for key, value in xattrs.items():
+                subdoc_results.append(self.registry.mutate_in(
+                    rkey,
+                    couchbase.subdocument.upsert(key, value, xattr=True)
+                ))
+
+            failed_subdoc_ops = [result for result in subdoc_results if result.success == False]
+            if len(failed_subdoc_ops) > 0:
+                return failed_subdoc_ops
+
+        return insert_result
+
+    # Legacy put command warps around insert. Sanitises inputs, removing etcd specific decoration.
+    def put(self, rtype, rkey, value, ttl=12, port=None):
+
+        # Remove extra-spec fields and add to dict of additional extended attributes
+        value = json.loads(value)
+        xattr_keys = [key for key in value.keys() if key[0] == '@']
+        xattrs = {}
+        for key in xattr_keys:
+            xattrs[_strip_punctuation(key)] = value[key]
+            del value[key]
+
+        # rtype[0:-1] naïvely strips the final character
+        return self.insert(rtype[0:-1], rkey, value, xattrs, ttl=ttl)
 
     def remove(self, rkey):
         self.registry.remove(rkey)
 
     # Legacy delete command wraps around remove
-    def delete(self, rtype, rkey):
+    def delete(self, rtype, rkey, port=None):
         self.remove(rkey)
 
         
