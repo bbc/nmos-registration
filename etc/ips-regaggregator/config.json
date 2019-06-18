@@ -1,5 +1,13 @@
 {
     "priority": 100,
     "https_mode": "disabled",
-    "enable_mdns": true
+    "enable_mdns": true,
+    "registry": {
+        "type": "etcd",
+        "hosts": ["localhost"],
+        "port": 4001,
+        "username": "",
+        "password": "",
+        "bucket": ""
+    }
 }
