@@ -27,8 +27,20 @@ import couchbase
 import time
 import string
 
+legacy_key_table = {
+    '@_apiversion': 'api_version'
+}
+
 def _strip_punctuation(input):
     return input.translate(str.maketrans('', '', string.punctuation))
+
+def _legacy_key_lookup(key):
+    try:
+        return legacy_key_table[key]
+    except KeyError:
+        # TODO: More proper handling of any additional keys starting '@_'?
+        #       - May just be sufficient to keep table and return otherwise, need to see other cases.
+        return key
 
 class CouchbaseInterface(object):
     def __init__(self, cluster_address, username, password, bucket, *args, **kwargs):
@@ -46,30 +58,20 @@ class CouchbaseInterface(object):
             return # TODO: Handle this better
         if insert_result.success:
             write_time = time.time()
+            time.sleep(1)
             subdoc_results = []
 
-            subdoc_results.append(self.registry.mutate_in(
-                rkey,
-                couchbase.subdocument.upsert('last_updated', write_time, xattr=True)
-            ))
-            subdoc_results.append(self.registry.mutate_in(
-                rkey,
-                couchbase.subdocument.upsert('created_at', write_time, xattr=True)
-            ))
-            subdoc_results.append(self.registry.mutate_in(
-                rkey,
-                couchbase.subdocument.upsert('resource_type', rtype, xattr=True)
-            ))
-            subdoc_results.append(self.registry.mutate_in(
-                rkey,
-                couchbase.subdocument.upsert('node_id', 'hmmst', xattr=True)
-            )) # TODO: How?
+            xattrs['last_updated'] = write_time
+            xattrs['created_at'] = write_time
+            xattrs['resource_type'] = rtype
+            if rtype != 'node':
+                xattrs['node_id'] = 'hmmm'
 
             # Store any additional extended attributes
             for key, value in xattrs.items():
                 subdoc_results.append(self.registry.mutate_in(
                     rkey,
-                    couchbase.subdocument.upsert(key, value, xattr=True)
+                    couchbase.subdocument.insert(_legacy_key_lookup(key), value, xattr=True)
                 ))
 
             failed_subdoc_ops = [result for result in subdoc_results if result.success == False]
@@ -86,7 +88,7 @@ class CouchbaseInterface(object):
         xattr_keys = [key for key in value.keys() if key[0] == '@']
         xattrs = {}
         for key in xattr_keys:
-            xattrs[_strip_punctuation(key)] = value[key]
+            xattrs[key] = value[key]
             del value[key]
 
         # rtype[0:-1] naïvely strips the final character

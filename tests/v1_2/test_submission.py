@@ -19,6 +19,7 @@ import uuid
 import copy
 import requests
 from couchbase.cluster import Cluster, PasswordAuthenticator
+import couchbase.subdocument as subdoc
 import os
 import time
 from testcontainers.compose import DockerCompose
@@ -70,7 +71,7 @@ def _initialise_cluster(host, port, bucket, username, password):
         auth=requests.auth.HTTPBasicAuth(username, password),
         data={
             'flushEnabled': 1,
-            'replicaNumber': 1,
+            'replicaNumber': 0,
             'evictionPolicy': 'valueOnly',
             'ramQuotaMB': 2048,
             'bucketType': 'couchbase',
@@ -91,7 +92,7 @@ class SubmissionRoutingTest(unittest.TestCase):
         
         _initialise_cluster(host, port, bucket_name, test_username, test_password)
         
-        time.sleep(2) # TODO, properly wait for setup somehow
+        time.sleep(10) # TODO, properly wait for setup somehow
 
         self.registry = RegistryAggregatorService(registry={
             "type": "couchbase",
@@ -108,7 +109,17 @@ class SubmissionRoutingTest(unittest.TestCase):
         cluster.authenticate(auth)
         self.test_bucket = cluster.open_bucket(bucket_name)
 
-    def test_write(self):
+    def test_document_write(self):
+        doc_body = util.json_fixture("fixtures/node.json")
+        request_payload = {
+            'type': 'node',
+            'data': doc_body
+        }
+
+        aggregator_response = requests.post('http://0.0.0.0:8235/x-nmos/registration/v1.2/resource', json=request_payload)
+        self.assertDictEqual(self.test_bucket.get(doc_body['id']).value, doc_body)
+
+    def test_xattrs_write(self):
         # TODO, make cluster a class variable? Set up in setUpClass and pass around?
         doc_body = util.json_fixture("fixtures/node.json")
         request_payload = {
@@ -116,10 +127,21 @@ class SubmissionRoutingTest(unittest.TestCase):
             'data': doc_body
         }
 
-        requests.post('http://0.0.0.0:8235/x-nmos/registration/v1.2/resource', json=request_payload)
-        time.sleep(2)
-        stored = self.test_bucket.get(doc_body['id'])
-        self.assertDictEqual(stored.value, doc_body)
+        post_time = time.time()
+        aggregator_response = requests.post('http://0.0.0.0:8235/x-nmos/registration/v1.2/resource', json=request_payload)
+
+        last_updated = self.test_bucket.lookup_in(doc_body['id'], subdoc.get('last_updated', xattr=True))
+        created_at = self.test_bucket.lookup_in(doc_body['id'], subdoc.get('created_at', xattr=True))
+        resource_type = self.test_bucket.lookup_in(doc_body['id'], subdoc.get('resource_type', xattr=True))
+        api_version = self.test_bucket.lookup_in(doc_body['id'], subdoc.get('api_version', xattr=True))
+        lookup_time = time.time()
+
+        self.assertEqual(api_version['api_version'], 'v1.2')
+        self.assertEqual(resource_type['resource_type'], 'node')
+        self.assertEqual(created_at['created_at'], last_updated['last_updated'])
+        self.assertLessEqual(created_at['created_at'], lookup_time)
+        self.assertGreaterEqual(created_at['created_at'], post_time)
+
 
     def tearDown(self):
         self.test_bucket.flush()
@@ -127,6 +149,7 @@ class SubmissionRoutingTest(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         self.couch_container.stop()
+        self.registry.stop()
 
 if __name__ == '__main__':
     unittest.main()
