@@ -135,3 +135,15 @@ class CouchbaseInterface(object):
         elif rtype=='source':
             return get_related_descendents(rtype, rkey)
     
+    def get(self, rkey):
+        return self.registry.get(rkey)
+
+    def resource_exists(self, resource_type, rkey):
+        print('determining resource existence')
+        try:
+            self.get(rkey)
+            actual_type = self.registry.lookup_in(rkey, couchbase.subdoc.get('resource_type', xattr=True))
+            print('type is {}'.format(actual_type['resource_type']))
+        except couchbase.exceptions.NotFoundError:
+            return False
+        return actual_type['resource_type'] == resource_type[0:-1]

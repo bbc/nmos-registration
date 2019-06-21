@@ -20,11 +20,13 @@ import copy
 import requests
 from couchbase.cluster import Cluster, PasswordAuthenticator
 import couchbase.subdocument as subdoc
+import couchbase.exceptions
 import os
 import time
 from testcontainers.compose import DockerCompose
 from testcontainers.core.container import DockerContainer
 from . import util
+import tests.helpers.doc_generator as doc_generator
 
 from nmosregistration.registryaggregatorservice import RegistryAggregatorService
 from nmosregistration.couchbase_backend import CouchbaseInterface
@@ -79,7 +81,7 @@ def _initialise_cluster(host, port, bucket, username, password):
         }
     )
 
-class SubmissionRoutingTest(unittest.TestCase):
+class TestSubmissionRouting(unittest.TestCase):
     @classmethod
     def setUpClass(self):
 
@@ -92,7 +94,7 @@ class SubmissionRoutingTest(unittest.TestCase):
         
         _initialise_cluster(host, port, bucket_name, test_username, test_password)
         
-        time.sleep(10) # TODO, properly wait for setup somehow
+        time.sleep(10) # TODO, properly wait for setup somehow, possible long poll?
 
         self.registry = RegistryAggregatorService(registry={
             "type": "couchbase",
@@ -142,6 +144,18 @@ class SubmissionRoutingTest(unittest.TestCase):
         self.assertLessEqual(created_at['created_at'], lookup_time)
         self.assertGreaterEqual(created_at['created_at'], post_time)
 
+    def test_register_without_parents(self):
+        """Return error if new child resource is missing appropriate parent resource and do not register child"""
+        test_device = doc_generator.generate_device()
+        request_payload = {
+            'type': 'device',
+            'data': test_device
+        }
+
+        aggregator_response = requests.post('http://0.0.0.0:8235/x-nmos/registration/v1.2/resource', json=request_payload)
+        self.assertEqual(aggregator_response.status_code, 400)
+        with self.assertRaises(couchbase.exceptions.NotFoundError):
+              self.test_bucket.get(test_device['id'])
 
     def tearDown(self):
         self.test_bucket.flush()
