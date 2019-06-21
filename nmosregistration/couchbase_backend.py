@@ -50,6 +50,9 @@ class CouchbaseInterface(object):
         self.registry = self.cluster.open_bucket(bucket)
         self.bucket = bucket
 
+    class RegistryUnavailable(Exception):
+        pass
+
     def insert(self, rtype, rkey, value, xattrs, ttl=12):
         try:
             insert_result = self.registry.insert(rkey, value, ttl=ttl)
