@@ -141,10 +141,12 @@ class TestSubmissionRouting(unittest.TestCase):
             'data': doc_body
         }
 
-        aggregator_response = requests.post('http://0.0.0.0:8235/x-nmos/registration/v1.2/resource', json=request_payload)
+        aggregator_response = requests.post('http://0.0.0.0:2202/x-nmos/registration/v1.2/resource', json=request_payload)
         self.assertDictEqual(self.test_bucket.get(doc_body['id']).value, doc_body)
 
     def test_xattrs_write(self):
+        """Ensure correct extended attributes are appended to the document, including a sensible
+           time for created_at and last_updated (which should be equal at the point of insertion)"""
         # TODO, make cluster a class variable? Set up in setUpClass and pass around?
         doc_body = util.json_fixture("fixtures/node.json")
         request_payload = {
@@ -152,14 +154,14 @@ class TestSubmissionRouting(unittest.TestCase):
             'data': doc_body
         }
 
-        post_time = time.time()
-        aggregator_response = requests.post('http://0.0.0.0:8235/x-nmos/registration/v1.2/resource', json=request_payload)
+        post_time = Timestamp.get_time().to_nanosec()
+        aggregator_response = requests.post('http://0.0.0.0:2202/x-nmos/registration/v1.2/resource', json=request_payload)
 
         last_updated = self.test_bucket.lookup_in(doc_body['id'], subdoc.get('last_updated', xattr=True))
         created_at = self.test_bucket.lookup_in(doc_body['id'], subdoc.get('created_at', xattr=True))
         resource_type = self.test_bucket.lookup_in(doc_body['id'], subdoc.get('resource_type', xattr=True))
         api_version = self.test_bucket.lookup_in(doc_body['id'], subdoc.get('api_version', xattr=True))
-        lookup_time = time.time()
+        lookup_time = Timestamp.get_time().to_nanosec()
 
         self.assertEqual(api_version['api_version'], 'v1.2')
         self.assertEqual(resource_type['resource_type'], 'node')
