@@ -23,6 +23,7 @@ import couchbase.subdocument as subdoc
 import couchbase.exceptions
 import os
 import time
+from nmoscommon.timestamp import Timestamp
 from testcontainers.compose import DockerCompose
 from testcontainers.core.container import DockerContainer
 from . import util
@@ -80,6 +81,28 @@ def _initialise_cluster(host, port, bucket, username, password):
             'name': bucket_name
         }
     )
+
+def _put_xattrs(bucket, key, xattrs, fill_timestamp_xattrs=True):
+    if fill_timestamp_xattrs:
+        time_now = Timestamp.get_time().to_nanosec()
+        xattrs['last_updated'] = time_now
+        xattrs['created_at'] = time_now
+    for xkey, xvalue in xattrs.items():
+        bucket.mutate_in(key, subdoc.insert(xkey, xvalue, xattr=True))
+
+def _put_doc(bucket, key, value, xattrs, fill_timestamp_xattrs=True):
+    bucket.insert(key, value, ttl=12)
+    time.sleep(1)
+    _put_xattrs(bucket, key, xattrs, fill_timestamp_xattrs)
+
+def _get_xattrs(bucket, key, xattrs):
+    results = {}
+    for key in xattrs.keys():
+        try:
+            results[key] = bucket.lookup_in(key, subdoc.get(key, xattr=True))
+        except couchbase.exceptions.SubdocPathNotFoundError:
+            results[key] = None
+    return results
 
 class TestSubmissionRouting(unittest.TestCase):
     @classmethod
@@ -152,10 +175,32 @@ class TestSubmissionRouting(unittest.TestCase):
             'data': test_device
         }
 
-        aggregator_response = requests.post('http://0.0.0.0:8235/x-nmos/registration/v1.2/resource', json=request_payload)
+        aggregator_response = requests.post('http://0.0.0.0:2202/x-nmos/registration/v1.2/resource', json=request_payload)
         self.assertEqual(aggregator_response.status_code, 400)
         with self.assertRaises(couchbase.exceptions.NotFoundError):
               self.test_bucket.get(test_device['id'])
+
+    def  test_register_device_with_node_parent(self):
+        """Ensure that device registers correctly, assocating with the proper node via xattrs"""
+        test_device = doc_generator.generate_device()
+        test_node = doc_generator.generate_node()
+        test_node['id'] = test_device['node_id']
+
+        # Ensure node exists in registry
+        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'})
+        self.assertDictEqual(self.test_bucket.get(test_node['id']).value, test_node)
+
+        request_payload = {
+            'type': 'device',
+            'data': test_device
+        }
+        aggregator_response = requests.post('http://0.0.0.0:2202/x-nmos/registration/v1.2/resource', json=request_payload)
+
+        stored_device = self.test_bucket.get(test_device['id'])
+        self.assertEqual(stored_device.value, test_device)
+
+        self.assertEqual(self.test_bucket.lookup_in(test_device['id'], subdoc.get('node_id', xattr=True))['node_id'], test_node['id'])
+
 
     def tearDown(self):
         self.test_bucket.flush()

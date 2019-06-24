@@ -25,6 +25,7 @@ import gevent
 from six.moves.urllib.parse import urlencode
 import couchbase
 import time
+from nmoscommon.timestamp import Timestamp
 import string
 
 legacy_key_table = {
@@ -53,22 +54,29 @@ class CouchbaseInterface(object):
     class RegistryUnavailable(Exception):
         pass
 
+    def _get_associated_node_id(self, rtype, rkey):
+        device = self.registry.get(rkey)
+        return device.value['node_id']
+
     def insert(self, rtype, rkey, value, xattrs, ttl=12):
         try:
-            insert_result = self.registry.insert(rkey, value, ttl=ttl)
+            insert_result = self.registry.insert(rkey, value, ttl=120)
         except couchbase.exceptions.KeyExistsError:
             print('Insert error: the key ({}) already exists'.format(rkey))
             return # TODO: Handle this better
         if insert_result.success:
-            write_time = time.time()
+            write_time = Timestamp.get_time().to_nanosec()
             time.sleep(1)
             subdoc_results = []
 
             xattrs['last_updated'] = write_time
             xattrs['created_at'] = write_time
             xattrs['resource_type'] = rtype
-            if rtype != 'node':
-                xattrs['node_id'] = 'hmmm'
+
+            if rtype == 'device':
+                xattrs['node_id'] = value['node_id']
+            elif rtype in ['receiver', 'sender', 'source', 'flow']:
+                xattrs['node_id'] = self._get_associated_node_id(value['device_id'])
 
             # Store any additional extended attributes
             for key, value in xattrs.items():
@@ -81,7 +89,7 @@ class CouchbaseInterface(object):
             if len(failed_subdoc_ops) > 0:
                 return failed_subdoc_ops
 
-        return insert_result
+        return {'result': insert_result, 'value': value}
 
     # Legacy put command warps around insert. Sanitises inputs, removing etcd specific decoration.
     def put(self, rtype, rkey, value, ttl=12, port=None):
@@ -145,8 +153,7 @@ class CouchbaseInterface(object):
         print('determining resource existence')
         try:
             self.get(rkey)
-            actual_type = self.registry.lookup_in(rkey, couchbase.subdoc.get('resource_type', xattr=True))
-            print('type is {}'.format(actual_type['resource_type']))
+            actual_type = self.registry.lookup_in(rkey, couchbase.subdocument.get('resource_type', xattr=True))
         except couchbase.exceptions.NotFoundError:
             return False
         return actual_type['resource_type'] == resource_type[0:-1]

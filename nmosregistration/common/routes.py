@@ -27,6 +27,8 @@ from ..config import config
 
 OAUTH_MODE = config.get('oauth_mode', False)
 
+from requests.models import Response
+
 VALID_TYPES = ['node', 'source', 'flow', 'device', "receiver", "sender"]
 REGISTRY_PORT = 2379
 NODE_SEEN_TTL = 12  # seconds until a node considered "dead".
@@ -184,7 +186,7 @@ class RoutesCommon(object):
             if type(req_data) is not str:
                 req_data = req_data.decode('utf-8')
             r = self._add_resource(req_data)
-            if r.status_code // 100 == 2:
+            if self.registry_type == 'etcd' and r.status_code // 100 == 2:
                 representation = json.loads(r.json()["node"]["value"])
                 # strip out any metadata
                 remove_keys = (x for x in list(representation) if x.startswith("@_"))
@@ -194,7 +196,8 @@ class RoutesCommon(object):
                 response.autocorrect_location_header = False
                 response.headers["Location"] = r.headers.get("Location", "")
                 return response
-
+            elif self.registry_type == 'couchbase':
+                return (200, r['value']) # TODO: r should be stored doc body, not response mumbo jumbo
             else:
                 self.logger.writeInfo("POST resource response: {}".format(r.content))
                 abort(r.status_code)
@@ -215,8 +218,10 @@ class RoutesCommon(object):
     def __resource_type_name(self, resource_type, rname):
         if request.method == 'DELETE':
             r = self._delete(resource_type, rname)
-            if r.status_code // 100 == 2:
+            if self.registry_type == 'etcd' and r.status_code // 100 == 2:
                 return (204, '')
+            else:
+                return 204
             abort(r.status_code)
         else:
             try:
