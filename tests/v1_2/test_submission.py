@@ -169,6 +169,17 @@ class TestSubmissionRouting(unittest.TestCase):
         self.assertLessEqual(created_at['created_at'], lookup_time)
         self.assertGreaterEqual(created_at['created_at'], post_time)
 
+    def test_get_resource(self):
+        """Ensure GET requests return proper resource information"""
+        test_node = doc_generator.generate_node()
+
+        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node', 'api_version': 'v1.2'})
+        time.sleep(1)
+        
+        aggregator_response = requests.get('http://0.0.0.0:2202/x-nmos/registration/v1.2/resource/node/{}'.format(test_node['id']))
+
+        self.assertDictEqual(aggregator_response.json(), test_node)
+
     def test_register_without_parents(self):
         """Return error if new child resource is missing appropriate parent resource and do not register child"""
         test_device = doc_generator.generate_device()

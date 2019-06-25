@@ -146,14 +146,24 @@ class CouchbaseInterface(object):
         elif rtype=='source':
             return get_related_descendents(rtype, rkey)
     
-    def get(self, rkey):
-        return self.registry.get(rkey)
+    # TODO: Strip useless legacy resource_type nonsense? Validate returned doc is correct type??
+    def get(self, resource_type, rkey):
+        return self.registry.get(rkey).value
 
     def resource_exists(self, resource_type, rkey):
         print('determining resource existence')
         try:
-            self.get(rkey)
+            self.get(resource_type, rkey)
             actual_type = self.registry.lookup_in(rkey, couchbase.subdocument.get('resource_type', xattr=True))
         except couchbase.exceptions.NotFoundError:
             return False
         return actual_type['resource_type'] == resource_type[0:-1]
+
+    def remove(self, rkey):
+        return self.registry.remove(rkey)
+
+    def delete(self, resource_type, rkey, port=None):
+        try:
+            return self.remove(rkey)
+        except couchbase.exceptions.NotFoundError:
+            return False
