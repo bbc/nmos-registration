@@ -32,9 +32,11 @@ import tests.helpers.doc_generator as doc_generator
 from nmosregistration.registryaggregatorservice import RegistryAggregatorService
 from nmosregistration.couchbase_backend import CouchbaseInterface
 
-bucket_name = 'nmos-test'
-test_username = 'nmos-test'
-test_password = 'password'
+BUCKET_NAME = 'nmos-test'
+TEST_USERNAME = 'nmos-test'
+TEST_PASSWORD = 'password'
+
+AGGREGATOR_PORT = 2202
 
 def _initialise_cluster(host, port, bucket, username, password):
     # Initialize node
@@ -78,7 +80,7 @@ def _initialise_cluster(host, port, bucket, username, password):
             'evictionPolicy': 'valueOnly',
             'ramQuotaMB': 2048,
             'bucketType': 'couchbase',
-            'name': bucket_name
+            'name': BUCKET_NAME
         }
     )
 
@@ -115,7 +117,7 @@ class TestSubmissionRouting(unittest.TestCase):
         host = self.couch_container.get_service_host('couchbase', 8091)
         port = self.couch_container.get_service_port('couchbase', 8091)
         
-        _initialise_cluster(host, port, bucket_name, test_username, test_password)
+        _initialise_cluster(host, port, BUCKET_NAME, TEST_USERNAME, TEST_PASSWORD)
         
         time.sleep(10) # TODO, properly wait for setup somehow, possible long poll?
 
@@ -123,16 +125,16 @@ class TestSubmissionRouting(unittest.TestCase):
             "type": "couchbase",
             "hosts": [host],
             "port": port,
-            "username": test_username,
-            "password": test_password,
-            "bucket": bucket_name
+            "username": TEST_USERNAME,
+            "password": TEST_PASSWORD,
+            "bucket": BUCKET_NAME
         })
         self.registry.start()
 
         cluster = Cluster('couchbase://{}'.format(host))
-        auth = PasswordAuthenticator(test_username, test_password)
+        auth = PasswordAuthenticator(TEST_USERNAME, TEST_PASSWORD)
         cluster.authenticate(auth)
-        self.test_bucket = cluster.open_bucket(bucket_name)
+        self.test_bucket = cluster.open_bucket(BUCKET_NAME)
 
     def test_document_write(self):
         doc_body = util.json_fixture("fixtures/node.json")
@@ -141,7 +143,10 @@ class TestSubmissionRouting(unittest.TestCase):
             'data': doc_body
         }
 
-        aggregator_response = requests.post('http://0.0.0.0:2202/x-nmos/registration/v1.2/resource', json=request_payload)
+        aggregator_response = requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/resource'.format(AGGREGATOR_PORT),
+            json=request_payload
+        )
         self.assertDictEqual(self.test_bucket.get(doc_body['id']).value, doc_body)
 
     def test_xattrs_write(self):
@@ -155,7 +160,10 @@ class TestSubmissionRouting(unittest.TestCase):
         }
 
         post_time = Timestamp.get_time().to_nanosec()
-        aggregator_response = requests.post('http://0.0.0.0:2202/x-nmos/registration/v1.2/resource', json=request_payload)
+        aggregator_response = requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/resource'.format(AGGREGATOR_PORT),
+            json=request_payload
+        )
 
         last_updated = self.test_bucket.lookup_in(doc_body['id'], subdoc.get('last_updated', xattr=True))
         created_at = self.test_bucket.lookup_in(doc_body['id'], subdoc.get('created_at', xattr=True))
@@ -176,7 +184,9 @@ class TestSubmissionRouting(unittest.TestCase):
         _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node', 'api_version': 'v1.2'})
         time.sleep(1)
         
-        aggregator_response = requests.get('http://0.0.0.0:2202/x-nmos/registration/v1.2/resource/node/{}'.format(test_node['id']))
+        aggregator_response = requests.get(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/resource/node/{}'.format(AGGREGATOR_PORT, test_node['id'])
+        )
 
         self.assertDictEqual(aggregator_response.json(), test_node)
 
@@ -188,10 +198,13 @@ class TestSubmissionRouting(unittest.TestCase):
             'data': test_device
         }
 
-        aggregator_response = requests.post('http://0.0.0.0:2202/x-nmos/registration/v1.2/resource', json=request_payload)
+        aggregator_response = requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/resource'.format(AGGREGATOR_PORT),
+            json=request_payload
+        )
         self.assertEqual(aggregator_response.status_code, 400)
         with self.assertRaises(couchbase.exceptions.NotFoundError):
-              self.test_bucket.get(test_device['id'])
+            self.test_bucket.get(test_device['id'])
 
     def  test_register_device_with_node_parent(self):
         """Ensure that device registers correctly, assocating with the proper node via xattrs"""
@@ -207,12 +220,21 @@ class TestSubmissionRouting(unittest.TestCase):
             'type': 'device',
             'data': test_device
         }
-        aggregator_response = requests.post('http://0.0.0.0:2202/x-nmos/registration/v1.2/resource', json=request_payload)
+        aggregator_response = requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/resource'.format(AGGREGATOR_PORT),
+            json=request_payload
+        )
 
         stored_device = self.test_bucket.get(test_device['id'])
         self.assertEqual(stored_device.value, test_device)
 
-        self.assertEqual(self.test_bucket.lookup_in(test_device['id'], subdoc.get('node_id', xattr=True))['node_id'], test_node['id'])
+        self.assertEqual(
+            self.test_bucket.lookup_in(
+                test_device['id'],
+                subdoc.get('node_id', xattr=True)
+            )['node_id'],
+            test_node['id']
+        )
 
 
     def tearDown(self):
