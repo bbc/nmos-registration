@@ -20,6 +20,7 @@ monkey.patch_all()
 # following block all suffixed with `# noqa E402` - follow up
 import requests
 from requests.adapters import TimeoutSauce
+from requests import Response
 import json
 import gevent
 from six.moves.urllib.parse import urlencode
@@ -54,9 +55,11 @@ class CouchbaseInterface(object):
     class RegistryUnavailable(Exception):
         pass
 
-    def _get_associated_node_id(self, rtype, rkey):
-        device = self.registry.get(rkey)
-        return device.value['node_id']
+    def _get_associated_node_id(self, rtype, value):
+        if rtype == 'device':
+            return value['node_id']
+        elif rtype in ['receiver', 'sender', 'source', 'flow']:
+            return self.registry.get(value['device_id']).value['node_id']
 
     def insert(self, rtype, rkey, value, xattrs, ttl=12):
         try:
@@ -72,11 +75,7 @@ class CouchbaseInterface(object):
             xattrs['last_updated'] = write_time
             xattrs['created_at'] = write_time
             xattrs['resource_type'] = rtype
-
-            if rtype == 'device':
-                xattrs['node_id'] = value['node_id']
-            elif rtype in ['receiver', 'sender', 'source', 'flow']:
-                xattrs['node_id'] = self._get_associated_node_id(value['device_id'])
+            xattrs['node_id'] = self._get_associated_node_id(rtype, value)
 
             # Store any additional extended attributes
             for key, value in xattrs.items():
@@ -126,32 +125,28 @@ class CouchbaseInterface(object):
 
         return residents
     
-    def get_related_descendents(self, rtype, rkey):
-        query = couchbase.n1ql.N1QLQuery(
-            "SELECT id FROM {0} WHERE `{1}_id` = '{2}'"
-            .format(self.bucket, rtype, rkey)
-        )
+    def get_descendents(self, rtype, rkey):
+        if rtype == 'node':
+            query = couchbase.n1ql.N1QLQuery(
+                "SELECT id from `{0}` WHERE meta().xattrs.node_id = '{1}'"
+                .format(self.bucket, rkey)
+            )
+        else:
+            query = couchbase.n1ql.N1QLQuery(
+                "SELECT id FROM '{0}' WHERE `{1}_id` = '{2}'"
+                .format(self.bucket, rtype, rkey)
+            )
 
         descendents = []
-        for descendent in registry.n1ql_query(query):
+        for descendent in self.registry.n1ql_query(query):
             descendents.append(descendent['id'])
-        
         return descendents
-
-    def get_descendents(self, rtype, rkey):
-        if rtype=='node':
-            return self.get_node_residents(rkey)
-        elif rtype=='device':
-            return get_related_descendents(rtype, rkey)
-        elif rtype=='source':
-            return get_related_descendents(rtype, rkey)
     
     # TODO: Strip useless legacy resource_type nonsense? Validate returned doc is correct type??
     def get(self, resource_type, rkey):
         return self.registry.get(rkey).value
 
     def resource_exists(self, resource_type, rkey):
-        print('determining resource existence')
         try:
             self.get(resource_type, rkey)
             actual_type = self.registry.lookup_in(rkey, couchbase.subdocument.get('resource_type', xattr=True))
@@ -163,7 +158,15 @@ class CouchbaseInterface(object):
         return self.registry.remove(rkey)
 
     def delete(self, resource_type, rkey, port=None):
+        r = Response()
+        descendents = self.get_descendents(resource_type, rkey)
+
         try:
-            return self.remove(rkey)
+            for descendent in descendents:
+                self.remove(descendent)
+            self.remove(rkey)
+            r.status_code = 204
         except couchbase.exceptions.NotFoundError:
-            return False
+            r.status_code = 404
+            r.reason = '{} not found in {} bucket'.format(rkey, self.bucket)
+        return r

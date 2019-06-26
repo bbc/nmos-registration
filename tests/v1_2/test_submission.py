@@ -83,6 +83,16 @@ def _initialise_cluster(host, port, bucket, username, password):
             'name': BUCKET_NAME
         }
     )
+    # Set indexer mode
+    indexer = requests.post('http://{0}:{1}/settings/indexes'.format(host,port),
+        auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, password),
+        data={
+            'indexerThreads': 0,
+            'maxRollbackPoints': 5,
+            'memorySnapshotInterval': 200,
+            'storageMode': 'forestdb',
+        }
+    )
 
 def _put_xattrs(bucket, key, xattrs, fill_timestamp_xattrs=True):
     if fill_timestamp_xattrs:
@@ -99,17 +109,16 @@ def _put_doc(bucket, key, value, xattrs, fill_timestamp_xattrs=True):
 
 def _get_xattrs(bucket, key, xattrs):
     results = {}
-    for key in xattrs.keys():
+    for xkey in xattrs:
         try:
-            results[key] = bucket.lookup_in(key, subdoc.get(key, xattr=True))
+            results[xkey] = bucket.lookup_in(key, subdoc.get(xkey, xattr=True))['{}'.format(xkey)]
         except couchbase.exceptions.SubdocPathNotFoundError:
-            results[key] = None
+            results[xkey] = None
     return results
 
 class TestSubmissionRouting(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-
         self.couch_container = DockerCompose('{}/tests/'.format(os.getcwd()))
         self.couch_container.start()
         self.couch_container.wait_for('http://localhost:8091')
@@ -135,6 +144,9 @@ class TestSubmissionRouting(unittest.TestCase):
         auth = PasswordAuthenticator(TEST_USERNAME, TEST_PASSWORD)
         cluster.authenticate(auth)
         self.test_bucket = cluster.open_bucket(BUCKET_NAME)
+        self.test_bucket_manager = self.test_bucket.bucket_manager()
+
+        self.test_bucket_manager.n1ql_index_create('test-bucket-primary-index', primary=True)
 
     def test_document_write(self):
         doc_body = util.json_fixture("fixtures/node.json")
@@ -236,6 +248,84 @@ class TestSubmissionRouting(unittest.TestCase):
             test_node['id']
         )
 
+    def test_register_source_with_node_xattr(self):
+        """Ensure that when a source is registered, the document is stored with the
+           correct extended attributes associating it with a parent node"""
+        test_device = doc_generator.generate_device()
+        test_source = doc_generator.generate_source()
+        test_source['device_id'] = test_device['id']
+        test_node = doc_generator.generate_node()
+        test_node['id'] = test_device['node_id']
+
+        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'})
+        _put_doc(
+            self.test_bucket,
+            test_device['id'],
+            test_device,
+            {'resource_type': 'device', 'node_id': test_device['node_id']}
+        )
+
+        request_payload = {
+            'type': 'source',
+            'data': test_source
+        }
+
+        aggregator_response = requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/resource'.format(AGGREGATOR_PORT),
+            json=request_payload
+        )
+
+        self.assertEqual(
+            _get_xattrs(self.test_bucket, test_source['id'], ['node_id'])['node_id'],
+            test_node['id'] # source
+        )
+
+    def test_delete_node_solo(self):
+        """Ensure a DELETE request deregisters an isolated node"""
+        test_node = doc_generator.generate_node()
+
+        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'})
+        self.assertDictEqual(self.test_bucket.get(test_node['id']).value, test_node)
+
+        aggregator_response = requests.delete(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/resource/node/{}'.format(
+                AGGREGATOR_PORT,
+                test_node['id']
+            )
+        )
+
+        self.assertEqual(aggregator_response.status_code, 204)
+        with self.assertRaises(couchbase.exceptions.NotFoundError):
+            self.test_bucket.get(test_node['id'])
+
+    def test_delete_node_and_children(self):
+        """Ensure a DELETE request to a node with child devices deregisters
+           all child resources"""
+        test_device = doc_generator.generate_device()
+        test_source = doc_generator.generate_source()
+        test_source['device_id'] = test_device['id']
+        test_node = doc_generator.generate_node()
+        test_node['id'] = test_device['node_id']
+
+        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'})
+        _put_doc(self.test_bucket, test_device['id'], test_device, {'resource_type': 'node', 'node_id': test_device['node_id']})
+        _put_doc(self.test_bucket, test_source['id'], test_source, {'resource_type': 'node', 'node_id': test_device['node_id']})
+
+        aggregator_response = requests.delete(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/resource/node/{}'.format(
+                AGGREGATOR_PORT,
+                test_node['id']
+            )
+        )
+
+        with self.assertRaises(couchbase.exceptions.NotFoundError):
+            self.test_bucket.get(test_node['id'])
+
+        with self.assertRaises(couchbase.exceptions.NotFoundError):
+            self.test_bucket.get(test_device['id'])
+
+        with self.assertRaises(couchbase.exceptions.NotFoundError):
+            self.test_bucket.get(test_source['id'])
 
     def tearDown(self):
         self.test_bucket.flush()

@@ -218,10 +218,8 @@ class RoutesCommon(object):
     def __resource_type_name(self, resource_type, rname):
         if request.method == 'DELETE':
             r = self._delete(resource_type, rname)
-            if self.registry_type == 'etcd' and r.status_code // 100 == 2:
+            if r.status_code // 100 == 2:
                 return (204, '')
-            else:
-                return 204
             abort(r.status_code)
         else:
             try:
