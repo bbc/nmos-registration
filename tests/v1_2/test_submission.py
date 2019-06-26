@@ -45,42 +45,42 @@ def _initialise_cluster(host, port, bucket, username, password):
         data={
             'path': '/opt/couchbase/var/lib/couchbase/data',
             'index_path': '/opt/couchbase/var/lib/couchbase/data',
-            'cbas_path': '/opt/couchbase/var/lib/couchbase/data'
+            'cbas_path': '/opt/couchbase/var/lib/couchbase/data',
         }
     )
     # Rename node
     requests.post('http://{0}:{1}/node/controller/rename'.format(host,port),
         auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
         data={
-            'hostname': '127.0.0.1'
+            'hostname': '127.0.0.1',
         }
     )
     # Setup services
     requests.post('http://{0}:{1}/node/controller/setupServices'.format(host,port),
         auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
         data={
-            'services': 'kv,index,n1ql,fts'
+            'services': 'kv,index,n1ql,fts',
         }
     )
     # Setup admin username/password
     requests.post('http://{0}:{1}/settings/web'.format(host,port),
         auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
         data={
-            'password': 'password',
-            'username': 'nmos-test',
-            'port': 8091
+            'password': TEST_PASSWORD,
+            'username': TEST_USERNAME,
+            'port': port,
         }
     )
     # Build bucket
     requests.post('http://{0}:{1}/pools/default/buckets'.format(host,port),
-        auth=requests.auth.HTTPBasicAuth(username, password),
+        auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, TEST_PASSWORD),
         data={
             'flushEnabled': 1,
             'replicaNumber': 0,
             'evictionPolicy': 'valueOnly',
             'ramQuotaMB': 2048,
             'bucketType': 'couchbase',
-            'name': BUCKET_NAME
+            'name': BUCKET_NAME,
         }
     )
     # Set indexer mode
@@ -177,17 +177,18 @@ class TestSubmissionRouting(unittest.TestCase):
             json=request_payload
         )
 
-        last_updated = self.test_bucket.lookup_in(doc_body['id'], subdoc.get('last_updated', xattr=True))
-        created_at = self.test_bucket.lookup_in(doc_body['id'], subdoc.get('created_at', xattr=True))
-        resource_type = self.test_bucket.lookup_in(doc_body['id'], subdoc.get('resource_type', xattr=True))
-        api_version = self.test_bucket.lookup_in(doc_body['id'], subdoc.get('api_version', xattr=True))
+        xattrs = _get_xattrs(
+            self.test_bucket,
+            doc_body['id'],
+            ['last_updated', 'created_at', 'resource_type', 'api_version']
+        )
         lookup_time = Timestamp.get_time().to_nanosec()
 
-        self.assertEqual(api_version['api_version'], 'v1.2')
-        self.assertEqual(resource_type['resource_type'], 'node')
-        self.assertEqual(created_at['created_at'], last_updated['last_updated'])
-        self.assertLessEqual(created_at['created_at'], lookup_time)
-        self.assertGreaterEqual(created_at['created_at'], post_time)
+        self.assertEqual(xattrs['api_version'], 'v1.2')
+        self.assertEqual(xattrs['resource_type'], 'node')
+        self.assertEqual(xattrs['created_at'], xattrs['last_updated'])
+        self.assertLessEqual(xattrs['created_at'], lookup_time)
+        self.assertGreaterEqual(xattrs['created_at'], post_time)
 
     def test_get_resource(self):
         """Ensure GET requests return proper resource information"""
