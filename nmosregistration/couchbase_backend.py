@@ -33,9 +33,6 @@ legacy_key_table = {
     '@_apiversion': 'api_version'
 }
 
-def _strip_punctuation(input):
-    return input.translate(str.maketrans('', '', string.punctuation))
-
 def _legacy_key_lookup(key):
     try:
         return legacy_key_table[key]
@@ -64,9 +61,9 @@ class CouchbaseInterface(object):
     def insert(self, rtype, rkey, value, xattrs, ttl=12):
         try:
             insert_result = self.registry.insert(rkey, value, ttl=120)
+            r = make_response(json.dumps(value), 201)
         except couchbase.exceptions.KeyExistsError:
-            print('Insert error: the key ({}) already exists'.format(rkey))
-            return # TODO: Handle this better
+            return make_response(409)
         if insert_result.success:
             write_time = Timestamp.get_time().to_nanosec()
             time.sleep(1)
@@ -88,11 +85,10 @@ class CouchbaseInterface(object):
             if len(failed_subdoc_ops) > 0:
                 return failed_subdoc_ops
 
-        return {'result': insert_result, 'value': value}
+        return r
 
     # Legacy put command warps around insert. Sanitises inputs, removing etcd specific decoration.
     def put(self, rtype, rkey, value, ttl=12, port=None):
-
         # Remove extra-spec fields and add to dict of additional extended attributes
         value = json.loads(value)
         xattr_keys = [key for key in value.keys() if key[0] == '@']
@@ -103,15 +99,6 @@ class CouchbaseInterface(object):
 
         # rtype[0:-1] naïvely strips the final character
         return self.insert(rtype[0:-1], rkey, value, xattrs, ttl=ttl)
-
-    def remove(self, rkey):
-        self.registry.remove(rkey)
-
-    # Legacy delete command wraps around remove
-    def delete(self, rtype, rkey, port=None):
-        self.remove(rkey)
-
-        
 
     # Generalise? Contextual query based on rtype?
     def get_node_residents(self, rkey):
@@ -155,7 +142,14 @@ class CouchbaseInterface(object):
         return actual_type['resource_type'] == resource_type[0:-1]
 
     def remove(self, rkey):
-        return self.registry.remove(rkey)
+        r = Response()
+        try:
+            self.registry.remove(rkey)
+            r.status_code = 204
+        except couchbase.exceptions.NotFoundError:
+            r.status_code = 404
+            r.reason = 'Key does not exist in registry'
+        return r
 
     def delete(self, resource_type, rkey, port=None):
         r = Response()

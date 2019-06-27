@@ -95,14 +95,13 @@ class RoutesCommon(object):
             reg_response = self.registry.put(
                 resource_type_plural, resource_id, json.dumps(resource_data), port=REGISTRY_PORT
             )
-            
-            if self.registry_type == 'etcd':
-                reg_response.autocorrect_location_header = False
-                reg_response.headers["Location"] = "/x-nmos/registration/{}/resource/{}/{}/".format(
-                    self.api_version, resource_type_plural, resource_id
-                )
 
-                self.logger.writeInfo("register {} {}: {}".format(resource_type, resource_id, reg_response.status_code))
+            reg_response.autocorrect_location_header = False
+            reg_response.headers["Location"] = "/x-nmos/registration/{}/resource/{}/{}/".format(
+                self.api_version, resource_type_plural, resource_id
+            )
+
+            self.logger.writeInfo("register {} {}: {}".format(resource_type, resource_id, reg_response.status_code))
             
             # Add an initial heartbeat if this is a node resource
             if self.registry_type == 'etcd' and resource_type == 'node':
@@ -186,18 +185,19 @@ class RoutesCommon(object):
             if type(req_data) is not str:
                 req_data = req_data.decode('utf-8')
             r = self._add_resource(req_data)
-            if self.registry_type == 'etcd' and r.status_code // 100 == 2:
-                representation = json.loads(r.json()["node"]["value"])
-                # strip out any metadata
-                remove_keys = (x for x in list(representation) if x.startswith("@_"))
-                for k in remove_keys:
-                    del representation[k]
-                response = make_response(jsonify(representation), r.status_code)
-                response.autocorrect_location_header = False
-                response.headers["Location"] = r.headers.get("Location", "")
-                return response
-            elif self.registry_type == 'couchbase':
-                return (200, r['value']) # TODO: r should be stored doc body, not response mumbo jumbo
+            if r.status_code // 100 == 2:
+                if self.registry_type == 'etcd':
+                    representation = json.loads(r.json()["node"]["value"])
+                    # strip out any metadata
+                    remove_keys = (x for x in list(representation) if x.startswith("@_"))
+                    for k in remove_keys:
+                        del representation[k]
+                    response = make_response(jsonify(representation), r.status_code)
+                    response.autocorrect_location_header = False
+                    response.headers["Location"] = r.headers.get("Location", "")
+                    return response
+                elif self.registry_type == 'couchbase':
+                    return r
             else:
                 self.logger.writeInfo("POST resource response: {}".format(r.content))
                 abort(r.status_code)

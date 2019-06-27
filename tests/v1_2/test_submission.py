@@ -160,6 +160,21 @@ class TestSubmissionRouting(unittest.TestCase):
             json=request_payload
         )
         self.assertDictEqual(self.test_bucket.get(doc_body['id']).value, doc_body)
+    
+    def test_register_response(self):
+        doc_body = util.json_fixture("fixtures/node.json")
+        request_payload = {
+            'type': 'node',
+            'data': doc_body
+        }
+
+        aggregator_response = requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/resource'.format(AGGREGATOR_PORT),
+            json=request_payload
+        )
+
+        self.assertEqual(aggregator_response.status_code, 200)
+        self.assertDictEqual(aggregator_response.json(), doc_body)
 
     def test_xattrs_write(self):
         """Ensure correct extended attributes are appended to the document, including a sensible
