@@ -92,9 +92,14 @@ class RoutesCommon(object):
             # Add in the API version we are registering with
             resource_data['@_apiversion'] = self.api_version
             
-            reg_response = self.registry.put(
-                resource_type_plural, resource_id, json.dumps(resource_data), port=REGISTRY_PORT
-            )
+            if self.registry_type == 'couchbase':
+                reg_response = self.registry.put(
+                    resource_type_plural, resource_id, json.dumps(resource_data), port=REGISTRY_PORT, ttl=NODE_SEEN_TTL
+                )
+            else:
+                reg_response = self.registry.put(
+                    resource_type_plural, resource_id, json.dumps(resource_data), port=REGISTRY_PORT
+                )
 
             reg_response.autocorrect_location_header = False
             reg_response.headers["Location"] = "/x-nmos/registration/{}/resource/{}/{}/".format(

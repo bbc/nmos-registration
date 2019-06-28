@@ -102,10 +102,11 @@ def _put_xattrs(bucket, key, xattrs, fill_timestamp_xattrs=True):
     for xkey, xvalue in xattrs.items():
         bucket.mutate_in(key, subdoc.insert(xkey, xvalue, xattr=True))
 
-def _put_doc(bucket, key, value, xattrs, fill_timestamp_xattrs=True):
-    bucket.insert(key, value, ttl=12)
+def _put_doc(bucket, key, value, xattrs, fill_timestamp_xattrs=True, ttl=12):
+    bucket.insert(key, value, ttl=ttl)
     time.sleep(1)
     _put_xattrs(bucket, key, xattrs, fill_timestamp_xattrs)
+    bucket.touch(key, ttl=ttl)
 
 def _get_xattrs(bucket, key, xattrs):
     results = {}
@@ -146,7 +147,10 @@ class TestSubmissionRouting(unittest.TestCase):
         self.test_bucket = cluster.open_bucket(BUCKET_NAME)
         self.test_bucket_manager = self.test_bucket.bucket_manager()
 
-        self.test_bucket_manager.n1ql_index_create('test-bucket-primary-index', primary=True)
+        try:
+            self.test_bucket_manager.n1ql_index_create('test-bucket-primary-index', primary=True)
+        except couchbase.exceptions.KeyExistsError:
+            pass
 
     def test_document_write(self):
         doc_body = util.json_fixture("fixtures/node.json")
@@ -205,6 +209,59 @@ class TestSubmissionRouting(unittest.TestCase):
         self.assertEqual(xattrs['created_at'], xattrs['last_updated'])
         self.assertLessEqual(xattrs['created_at'], lookup_time)
         self.assertGreaterEqual(xattrs['created_at'], post_time)
+
+    def test_node_expiry(self):
+        """Ensure nodes expire 12s after registration if no further heartbeats are received"""
+        doc_body = util.json_fixture("fixtures/node.json")
+        request_payload = {
+            'type': 'node',
+            'data': doc_body
+        }
+
+        aggregator_response = requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/resource'.format(AGGREGATOR_PORT),
+            json=request_payload
+        )
+
+        time.sleep(13)
+
+        with self.assertRaises(couchbase.exceptions.NotFoundError):
+            self.test_bucket.get(doc_body['id'])
+
+    def test_device_expiry_with_node(self):
+        """Ensure devices expire at the same time as parent nodes after registration if no further heartbeats are received"""
+        test_device = doc_generator.generate_device()
+        test_node = doc_generator.generate_node()
+        test_node['id'] = test_device['node_id']
+
+        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'}, ttl=12)
+
+
+        request_payload = {
+            'type': 'device',
+            'data': test_device
+        }
+
+        time.sleep(2)
+
+        aggregator_response = requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/resource'.format(AGGREGATOR_PORT),
+            json=request_payload
+        )
+
+        node_ttl = _get_xattrs(self.test_bucket, test_node['id'], ['$document.exptime'])['$document.exptime']
+        device_ttl = _get_xattrs(self.test_bucket, test_device['id'], ['$document.exptime'])['$document.exptime']
+
+        self.assertEqual(node_ttl, device_ttl)
+
+        time.sleep(11)
+
+        with self.assertRaises(couchbase.exceptions.NotFoundError):
+            self.test_bucket.get(test_device['id'])
+        with self.assertRaises(couchbase.exceptions.NotFoundError):
+            self.test_bucket.get(test_node['id'])
+
+
 
     def test_get_resource(self):
         """Ensure GET requests return proper resource information"""

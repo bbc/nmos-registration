@@ -28,6 +28,7 @@ import couchbase
 import time
 from nmoscommon.timestamp import Timestamp
 import string
+from flask import make_response
 
 legacy_key_table = {
     '@_apiversion': 'api_version'
@@ -60,8 +61,8 @@ class CouchbaseInterface(object):
 
     def insert(self, rtype, rkey, value, xattrs, ttl=12):
         try:
-            insert_result = self.registry.insert(rkey, value, ttl=120)
-            r = make_response(json.dumps(value), 201)
+            insert_result = self.registry.insert(rkey, value, ttl=ttl)
+            r = make_response(json.dumps(value), 200)
         except couchbase.exceptions.KeyExistsError:
             return make_response(409)
         if insert_result.success:
@@ -84,6 +85,15 @@ class CouchbaseInterface(object):
             failed_subdoc_ops = [result for result in subdoc_results if result.success == False]
             if len(failed_subdoc_ops) > 0:
                 return failed_subdoc_ops
+
+        if rtype != 'node':
+            ttl = self.registry.lookup_in(xattrs['node_id'], couchbase.subdocument.get('$document.exptime', xattr=True))['$document.exptime']
+
+        try:
+            touch_result = self.registry.touch(rkey, ttl=ttl)
+        except Exception:
+            self.remove(rkey)
+            r = make_response(500)
 
         return r
 
