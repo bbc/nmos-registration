@@ -174,6 +174,7 @@ class TestSubmissionRouting(unittest.TestCase):
         )
 
         self.assertEqual(aggregator_response.status_code, 200)
+        self.assertEqual(aggregator_response.headers['location'], '/x-nmos/registration/v1.2/resource/nodes/{}/'.format(doc_body['id']))
         self.assertDictEqual(aggregator_response.json(), doc_body)
 
     def test_xattrs_write(self):
