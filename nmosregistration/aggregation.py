@@ -52,8 +52,9 @@ class AggregatorAPI(WebAPI):
         super(AggregatorAPI, self).__init__()
         self._config = config
 
-        garbage_collect_interval = int(self._config.get("garbage_collect_interval", 10))
-        self._garbage_collector = GarbageCollect(identifier=HOST, registry=registry, interval=garbage_collect_interval)
+        if config['registry']['type'] == 'etcd':
+            garbage_collect_interval = int(self._config.get("garbage_collect_interval", 10))
+            self._garbage_collector = GarbageCollect(identifier=HOST, registry=registry, interval=garbage_collect_interval)
 
         self._v1_0_api = v1_0.Routes(logger=logger, registry=registry, registry_type=config['registry']['type'])
         self.add_routes(self._v1_0_api, basepath="/x-nmos/registration/v1.0")
