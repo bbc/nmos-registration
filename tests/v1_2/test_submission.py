@@ -164,7 +164,7 @@ class TestSubmissionRouting(unittest.TestCase):
             json=request_payload
         )
         self.assertDictEqual(self.test_bucket.get(doc_body['id']).value, doc_body)
-    
+   
     def test_register_response(self):
         doc_body = util.json_fixture("fixtures/node.json")
         request_payload = {
@@ -398,6 +398,122 @@ class TestSubmissionRouting(unittest.TestCase):
         with self.assertRaises(couchbase.exceptions.NotFoundError):
             self.test_bucket.get(test_device['id'])
 
+        with self.assertRaises(couchbase.exceptions.NotFoundError):
+            self.test_bucket.get(test_source['id'])
+
+    def test_health_response(self):
+        """Ensure a POST to the health route returns the correct response body and status code"""
+        test_node = doc_generator.generate_node()
+
+        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'})
+
+        aggregator_response = requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/health/nodes/{}'.format(
+                AGGREGATOR_PORT,
+                test_node['id']
+            )
+        )
+
+        self.assertEqual(aggregator_response.status_code, 200)
+        self.assertEqual(list(aggregator_response.json().keys()), ['health'])
+        self.assertAlmostEqual(aggregator_response.json()['health'], time.time(), -2)
+
+    def test_health_expiry(self):
+        """Ensure a POST to the health route extends the expiry of the appropriate node"""
+        test_node = doc_generator.generate_node()
+
+        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'}, ttl=12)
+
+        time.sleep(5)
+
+        prior_ttl = _get_xattrs(self.test_bucket, test_node['id'], ['$document.exptime'])['$document.exptime']
+
+        aggregator_response = requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/health/nodes/{}'.format(
+                AGGREGATOR_PORT,
+                test_node['id']
+            )
+        )
+
+        post_ttl = _get_xattrs(self.test_bucket, test_node['id'], ['$document.exptime'])['$document.exptime']
+
+        self.assertGreater(post_ttl, prior_ttl)
+
+        time.sleep(7)
+
+        self.assertDictEqual(self.test_bucket.get(test_node['id']).value, test_node)
+
+        time.sleep(6)
+
+        with self.assertRaises(couchbase.exceptions.NotFoundError):
+            self.test_bucket.get(test_node['id'])
+
+    def test_health_expiry_chidren(self):
+        """Ensure a POST to the health route extends the expiry of the appropriate node and all children"""
+        test_device = doc_generator.generate_device()
+        test_source = doc_generator.generate_source()
+        test_source['device_id'] = test_device['id']
+        test_node = doc_generator.generate_node()
+        test_node['id'] = test_device['node_id']
+
+        prior_ttl = {}
+        post_ttl = {}
+
+        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'}, ttl=12)
+        # Retrieve ttl as unix timestamp such that children are inserted with same ttl as with posting to aggregator
+        prior_ttl['node'] = _get_xattrs(self.test_bucket, test_node['id'], ['$document.exptime'])['$document.exptime']
+
+
+        _put_doc(
+            self.test_bucket,
+            test_device['id'],
+            test_device,
+            {'resource_type': 'device', 'node_id': test_node['id']},
+            ttl=prior_ttl['node']
+        )
+        _put_doc(
+            self.test_bucket,
+            test_source['id'],
+            test_source,
+            {'resource_type': 'source', 'node_id': test_node['id']},
+            ttl=prior_ttl['node']
+        )
+
+        time.sleep(5)
+
+        prior_ttl['device'] = _get_xattrs(self.test_bucket, test_device['id'], ['$document.exptime'])['$document.exptime']
+        prior_ttl['source'] = _get_xattrs(self.test_bucket, test_source['id'], ['$document.exptime'])['$document.exptime']
+
+        self.assertListEqual(list(prior_ttl.values()), [prior_ttl['node'], prior_ttl['node'], prior_ttl['node']])
+
+        aggregator_response = requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/health/nodes/{}'.format(
+                AGGREGATOR_PORT,
+                test_node['id']
+            )
+        )
+        
+
+        post_ttl['node'] = _get_xattrs(self.test_bucket, test_node['id'], ['$document.exptime'])['$document.exptime']
+        post_ttl['device'] = _get_xattrs(self.test_bucket, test_device['id'], ['$document.exptime'])['$document.exptime']
+        post_ttl['source'] = _get_xattrs(self.test_bucket, test_source['id'], ['$document.exptime'])['$document.exptime']
+
+        self.assertListEqual(list(post_ttl.values()), [post_ttl['node'], post_ttl['node'], post_ttl['node']])
+
+        self.assertGreater(post_ttl['node'], prior_ttl['node'])
+
+        time.sleep(7)
+
+        self.assertDictEqual(self.test_bucket.get(test_node['id']).value, test_node)
+        self.assertDictEqual(self.test_bucket.get(test_device['id']).value, test_device)
+        self.assertDictEqual(self.test_bucket.get(test_source['id']).value, test_source)
+
+        time.sleep(6)
+
+        with self.assertRaises(couchbase.exceptions.NotFoundError):
+            self.test_bucket.get(test_node['id'])
+        with self.assertRaises(couchbase.exceptions.NotFoundError):
+            self.test_bucket.get(test_device['id'])
         with self.assertRaises(couchbase.exceptions.NotFoundError):
             self.test_bucket.get(test_source['id'])
 

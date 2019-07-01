@@ -59,6 +59,11 @@ class CouchbaseInterface(object):
         elif rtype in ['receiver', 'sender', 'source', 'flow']:
             return self.registry.get(value['device_id']).value['node_id']
 
+    def get_health(self, rkey, port=None):
+        return self.registry.lookup_in(
+            rkey, couchbase.subdocument.get('$document.exptime', xattr=True)
+        )['$document.exptime']
+
     def insert(self, rtype, rkey, value, xattrs, ttl=12):
         try:
             insert_result = self.registry.insert(rkey, value, ttl=ttl)
@@ -87,7 +92,7 @@ class CouchbaseInterface(object):
                 return failed_subdoc_ops
 
         if rtype != 'node':
-            ttl = self.registry.lookup_in(xattrs['node_id'], couchbase.subdocument.get('$document.exptime', xattr=True))['$document.exptime']
+            ttl = self.get_health(xattrs['node_id'])
 
         try:
             touch_result = self.registry.touch(rkey, ttl=ttl)
@@ -135,12 +140,15 @@ class CouchbaseInterface(object):
             )
 
         descendents = []
-        for descendent in self.registry.n1ql_query(query):
-            descendents.append(descendent['id'])
+        try:
+            for descendent in self.registry.n1ql_query(query):
+                descendents.append(descendent['id'])
+        except couchbase.n1ql.N1QLError:
+            return []
         return descendents
     
     # TODO: Strip useless legacy resource_type nonsense? Validate returned doc is correct type??
-    def get(self, resource_type, rkey):
+    def get(self, resource_type, rkey, port=None):
         return self.registry.get(rkey).value
 
     def resource_exists(self, resource_type, rkey):
@@ -150,6 +158,16 @@ class CouchbaseInterface(object):
         except couchbase.exceptions.NotFoundError:
             return False
         return actual_type['resource_type'] == resource_type[0:-1]
+
+    def touch(self, rkey, ttl=12):
+        return self.registry.touch(rkey, ttl=ttl)
+        
+
+    def put_health(self, rkey, value, ttl=12, port=None):
+        for descendent in self.get_descendents('node', rkey):
+            self.touch(descendent, ttl=ttl)
+        if self.touch(rkey, ttl).success == True:
+            return make_response(json.dumps({'health': value}), 200)
 
     def remove(self, rkey):
         r = Response()
