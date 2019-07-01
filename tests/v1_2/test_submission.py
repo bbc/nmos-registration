@@ -210,6 +210,46 @@ class TestSubmissionRouting(unittest.TestCase):
         self.assertLessEqual(xattrs['created_at'], lookup_time)
         self.assertGreaterEqual(xattrs['created_at'], post_time)
 
+    def test_resource_update(self):
+        test_node = doc_generator.generate_node()
+
+        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'})
+
+
+        test_node['href'] = 'https://www.youtube.com/watch?v=taUqt_E0aOs'
+        request_payload = {
+            'type': 'node',
+            'data': test_node
+        }
+        
+        aggregator_response = requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/resource'.format(AGGREGATOR_PORT),
+            json=request_payload
+        )
+
+        self.assertDictEqual(self.test_bucket.get(test_node['id']).value, test_node)
+
+    def test_duplicate_insert(self):
+        test_node = doc_generator.generate_node()
+
+        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'})
+
+        test_device = doc_generator.generate_device()
+        test_device['id'] = test_node['id']
+        test_device['node_id'] = test_node['id']
+        request_payload = {
+            'type': 'device',
+            'data': test_device
+        }
+
+        aggregator_response = requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/v1.2/resource'.format(AGGREGATOR_PORT),
+            json=request_payload
+        )
+
+        self.assertEqual(aggregator_response.status_code, 409)
+        self.assertDictEqual(self.test_bucket.get(test_device['id']).value, test_node)
+
     def test_node_expiry(self):
         """Ensure nodes expire 12s after registration if no further heartbeats are received"""
         doc_body = util.json_fixture("fixtures/node.json")

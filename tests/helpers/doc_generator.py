@@ -11,7 +11,7 @@ node_format = {
     'href': 'uri',
     'caps': {},
     'api': {
-        'versions': [re.compile('v[0-9]+.[0-9]+')],
+        'versions': [re.compile('^v[0-9]+\.[0-9]+$')],
         'endpoints': [{
             'host': '172.0.0.1',
             'port': 1000,
@@ -22,11 +22,11 @@ node_format = {
         'href': 'uri',
         'type': 'uri',
     }],
-    'interfaces': {
+    'interfaces': [{
         'chassis_id': re.compile('^([0-9a-f]{2}[-]){5}([0-9a-f]{2})$'),
         'port_id': re.compile('([0-9a-f]{2}[-]){5}([0-9a-f]{2})$'),
         'name': 'String Name'
-    },
+    }],
     'clocks': [{
         'name': re.compile('clk[0-9]'),
         'ref_type': 'internal'

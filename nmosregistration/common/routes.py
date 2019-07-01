@@ -204,7 +204,8 @@ class RoutesCommon(object):
                 elif self.registry_type == 'couchbase':
                     return r
             else:
-                self.logger.writeInfo("POST resource response: {}".format(r.content))
+                if self.registry_type == 'etcd':
+                    self.logger.writeInfo("POST resource response: {}".format(r.content))
                 abort(r.status_code)
         else:
             return make_response(jsonify(["{}s/".format(x) for x in VALID_TYPES]), 200)

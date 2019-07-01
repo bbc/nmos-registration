@@ -64,13 +64,13 @@ class CouchbaseInterface(object):
             rkey, couchbase.subdocument.get('$document.exptime', xattr=True)
         )['$document.exptime']
 
-    def insert(self, rtype, rkey, value, xattrs, ttl=12):
+    def upsert(self, rtype, rkey, value, xattrs, ttl=12):
         try:
-            insert_result = self.registry.insert(rkey, value, ttl=ttl)
+            upsert_result = self.registry.upsert(rkey, value, ttl=ttl)
             r = make_response(json.dumps(value), 200)
         except couchbase.exceptions.KeyExistsError:
             return make_response(409)
-        if insert_result.success:
+        if upsert_result.success:
             write_time = Timestamp.get_time().to_nanosec()
             time.sleep(1)
             subdoc_results = []
@@ -84,7 +84,7 @@ class CouchbaseInterface(object):
             for key, value in xattrs.items():
                 subdoc_results.append(self.registry.mutate_in(
                     rkey,
-                    couchbase.subdocument.insert(_legacy_key_lookup(key), value, xattr=True)
+                    couchbase.subdocument.upsert(_legacy_key_lookup(key), value, xattr=True)
                 ))
 
             failed_subdoc_ops = [result for result in subdoc_results if result.success == False]
@@ -102,8 +102,16 @@ class CouchbaseInterface(object):
 
         return r
 
-    # Legacy put command warps around insert. Sanitises inputs, removing etcd specific decoration.
+    # Legacy put command warps around upsert. Sanitises inputs, removing etcd specific decoration.
     def put(self, rtype, rkey, value, ttl=12, port=None):
+        try:
+            if rtype[0:-1] != self.registry.lookup_in(
+                rkey,
+                couchbase.subdocument.get('resource_type', xattr=True)
+            )['resource_type']:
+                return make_response('Key already exists', 409)
+        except couchbase.exceptions.NotFoundError:
+            pass
         # Remove extra-spec fields and add to dict of additional extended attributes
         value = json.loads(value)
         xattr_keys = [key for key in value.keys() if key[0] == '@']
@@ -113,7 +121,7 @@ class CouchbaseInterface(object):
             del value[key]
 
         # rtype[0:-1] naïvely strips the final character
-        return self.insert(rtype[0:-1], rkey, value, xattrs, ttl=ttl)
+        return self.upsert(rtype[0:-1], rkey, value, xattrs, ttl=ttl)
 
     # Generalise? Contextual query based on rtype?
     def get_node_residents(self, rkey):
