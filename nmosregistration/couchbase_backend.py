@@ -57,7 +57,9 @@ class CouchbaseInterface(object):
         pass
 
     def _get_associated_node_id(self, rtype, value):
-        if rtype == 'device':
+        if rtype == 'node':
+            return value['id']
+        elif rtype == 'device':
             return value['node_id']
         elif rtype in ['receiver', 'sender', 'source', 'flow']:
             return self.registry.get(value['device_id']).value['node_id']
@@ -112,6 +114,8 @@ class CouchbaseInterface(object):
                 subdoc.get('resource_type', xattr=True)
             )['resource_type']:
                 return make_response('Key already exists', 409)
+        except couchbase.exceptions.SubdocPathNotFoundError:
+            pass
         except couchbase.exceptions.NotFoundError:
             pass
         # Remove extra-spec fields and add to dict of additional extended attributes
@@ -145,7 +149,7 @@ class CouchbaseInterface(object):
             )
         else:
             query = couchbase.n1ql.N1QLQuery(
-                "SELECT id FROM '{0}' WHERE `{1}_id` = '{2}'"
+                "SELECT id FROM `{0}` WHERE `{1}_id` = '{2}'"
                 .format(self.bucket, rtype, rkey)
             )
 
