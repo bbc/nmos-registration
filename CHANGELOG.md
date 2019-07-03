@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.7.6
+- Add cleanup function when stopping service
+
 ## 0.7.5
 - Fix python3 errors
 
