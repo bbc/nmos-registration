@@ -131,14 +131,16 @@ class TestSubmissionRouting(unittest.TestCase):
         
         time.sleep(10) # TODO, properly wait for setup somehow, possible long poll?
 
-        self.registry = RegistryAggregatorService(registry={
+        self.registry = RegistryAggregatorService()
+        self.registry.config['registry'] = {
             "type": "couchbase",
             "hosts": [host],
             "port": port,
             "username": TEST_USERNAME,
             "password": TEST_PASSWORD,
             "bucket": BUCKET_NAME
-        })
+        }
+        self.registry.config['priority'] = 169
         self.registry.start()
 
         cluster = Cluster('couchbase://{}'.format(host))
