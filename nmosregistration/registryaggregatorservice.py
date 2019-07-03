@@ -47,7 +47,7 @@ REGISTRY_PORT = 4001
 
 class RegistryAggregatorService(object):
     def __init__(self, logger=None, interactive=False):
-        self.config = {"priority": 0, "https_mode": "disabled", "enable_mdns": True}
+        self.config = {"priority": 100, "https_mode": "disabled", "enable_mdns": True}
         self._load_config()
         self.running = False
         self.httpServer = None
@@ -127,16 +127,15 @@ class RegistryAggregatorService(object):
         daemon.notify(SYSTEMD_READY)
         while self.running:
             time.sleep(1)
-        self._cleanup()
 
     def _cleanup(self):
-        self.mdns.stop()
         self.mdns.close()
         self.httpServer.stop()
         print("Stopped main()")
 
     def stop(self):
         self.running = False
+        self._cleanup()
 
     def sig_handler(self):
         print("Pressed ctrl+c")
