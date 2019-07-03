@@ -36,10 +36,9 @@ NODE_SEEN_TTL = 12  # seconds until a node considered "dead".
 
 class RoutesCommon(object):
 
-    def __init__(self, logger, registry, api_version="v1.0", api_schema=schema, registry_type="etcd"):
+    def __init__(self, logger, registry, api_version="v1.0", api_schema=schema):
         self.logger = logger
         self.registry = registry
-        self.registry_type = registry_type
         self.modifier = RegModifier(logger=self.logger)
         self.api_version = api_version
         self.api_schema = api_schema
@@ -92,7 +91,7 @@ class RoutesCommon(object):
             # Add in the API version we are registering with
             resource_data['@_apiversion'] = self.api_version
             
-            if self.registry_type == 'couchbase':
+            if self.registry.type == 'couchbase':
                 reg_response = self.registry.put(
                     resource_type_plural, resource_id, json.dumps(resource_data), port=REGISTRY_PORT, ttl=NODE_SEEN_TTL
                 )
@@ -109,7 +108,7 @@ class RoutesCommon(object):
             self.logger.writeInfo("register {} {}: {}".format(resource_type, resource_id, reg_response.status_code))
             
             # Add an initial heartbeat if this is a node resource
-            if self.registry_type == 'etcd' and resource_type == 'node':
+            if self.registry.type == 'etcd' and resource_type == 'node':
                 hb_r = self.registry.put_health(resource_id, int(time.time()), ttl=NODE_SEEN_TTL, port=REGISTRY_PORT)
                 if hb_r.status_code not in [204, 201, 200]:
                     self.logger.writeWarning("could not add initial heartbeat: {}".format(hb_r))
@@ -191,7 +190,7 @@ class RoutesCommon(object):
                 req_data = req_data.decode('utf-8')
             r = self._add_resource(req_data)
             if r.status_code // 100 == 2:
-                if self.registry_type == 'etcd':
+                if self.registry.type == 'etcd':
                     representation = json.loads(r.json()["node"]["value"])
                     # strip out any metadata
                     remove_keys = (x for x in list(representation) if x.startswith("@_"))
@@ -201,10 +200,10 @@ class RoutesCommon(object):
                     response.autocorrect_location_header = False
                     response.headers["Location"] = r.headers.get("Location", "")
                     return response
-                elif self.registry_type == 'couchbase':
+                elif self.registry.type == 'couchbase':
                     return r
             else:
-                if self.registry_type == 'etcd':
+                if self.registry.type == 'etcd':
                     self.logger.writeInfo("POST resource response: {}".format(r.content))
                 abort(r.status_code)
         else:

@@ -46,6 +46,7 @@ class MockLogger():
 
 
 class MockRegistry():
+    type = 'etcd'
     def __init__(self):
         self.invocations = []
 
@@ -66,6 +67,7 @@ class MockRegistry():
 
 
 class MockRegistry_broken():
+    type = 'etcd'
     def __init__(self):
         self.invocations = []
 
