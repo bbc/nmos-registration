@@ -24,7 +24,9 @@ from requests import Response
 import json
 import gevent
 from six.moves.urllib.parse import urlencode
-import couchbase
+import couchbase.exceptions
+import couchbase.subdocument as subdoc
+from couchbase.cluster import Cluster, PasswordAuthenticator
 import time
 from nmoscommon.timestamp import Timestamp
 import string
@@ -44,8 +46,8 @@ def _legacy_key_lookup(key):
 
 class CouchbaseInterface(object):
     def __init__(self, cluster_address, username, password, bucket, *args, **kwargs):
-        self.cluster = couchbase.cluster.Cluster('couchbase://{}'.format(','.join(cluster_address)))
-        auth = couchbase.cluster.PasswordAuthenticator(username, password)
+        self.cluster = Cluster('couchbase://{}'.format(','.join(cluster_address)))
+        auth = PasswordAuthenticator(username, password)
         self.cluster.authenticate(auth)
         self.registry = self.cluster.open_bucket(bucket)
         self.bucket = bucket
@@ -61,7 +63,7 @@ class CouchbaseInterface(object):
 
     def get_health(self, rkey, port=None):
         return self.registry.lookup_in(
-            rkey, couchbase.subdocument.get('$document.exptime', xattr=True)
+            rkey, subdoc.get('$document.exptime', xattr=True)
         )['$document.exptime']
 
     def upsert(self, rtype, rkey, value, xattrs, ttl=12):
@@ -83,7 +85,7 @@ class CouchbaseInterface(object):
             for key, value in xattrs.items():
                 subdoc_results.append(self.registry.mutate_in(
                     rkey,
-                    couchbase.subdocument.upsert(_legacy_key_lookup(key), value, xattr=True)
+                    subdoc.upsert(_legacy_key_lookup(key), value, xattr=True)
                 ))
 
             failed_subdoc_ops = [result for result in subdoc_results if result.success == False]
@@ -106,7 +108,7 @@ class CouchbaseInterface(object):
         try:
             if rtype[0:-1] != self.registry.lookup_in(
                 rkey,
-                couchbase.subdocument.get('resource_type', xattr=True)
+                subdoc.get('resource_type', xattr=True)
             )['resource_type']:
                 return make_response('Key already exists', 409)
         except couchbase.exceptions.NotFoundError:
@@ -161,7 +163,7 @@ class CouchbaseInterface(object):
     def resource_exists(self, resource_type, rkey):
         try:
             self.get(resource_type, rkey)
-            actual_type = self.registry.lookup_in(rkey, couchbase.subdocument.get('resource_type', xattr=True))
+            actual_type = self.registry.lookup_in(rkey, subdoc.get('resource_type', xattr=True))
         except couchbase.exceptions.NotFoundError:
             return False
         return actual_type['resource_type'] == resource_type[0:-1]
