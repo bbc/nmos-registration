@@ -36,7 +36,7 @@ BUCKET_NAME = 'nmos-test'
 TEST_USERNAME = 'nmos-test'
 TEST_PASSWORD = 'password'
 
-AGGREGATOR_PORT = 2202
+AGGREGATOR_PORT = 8235
 
 def _initialise_cluster(host, port, bucket, username, password):
     # Initialize node
@@ -217,7 +217,6 @@ class TestSubmissionRouting(unittest.TestCase):
 
         _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'})
 
-
         test_node['href'] = 'https://www.youtube.com/watch?v=taUqt_E0aOs'
         request_payload = {
             'type': 'node',
@@ -302,8 +301,6 @@ class TestSubmissionRouting(unittest.TestCase):
             self.test_bucket.get(test_device['id'])
         with self.assertRaises(couchbase.exceptions.NotFoundError):
             self.test_bucket.get(test_node['id'])
-
-
 
     def test_get_resource(self):
         """Ensure GET requests return proper resource information"""
