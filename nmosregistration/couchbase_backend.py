@@ -72,7 +72,6 @@ class CouchbaseInterface(object):
             return make_response(409)
         if upsert_result.success:
             write_time = Timestamp.get_time().to_nanosec()
-            time.sleep(1)
             subdoc_results = []
 
             xattrs['last_updated'] = write_time
