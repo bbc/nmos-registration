@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.7.7
+- Import config from seperate file, add OAUTH_MODE config parameter
+
 ## 0.7.6
 - Add cleanup function when stopping service
 

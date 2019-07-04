@@ -23,6 +23,9 @@ from nmoscommon.auth.nmos_auth import RequiresAuth
 
 from nmosregistration.modifier import RegModifier
 from nmosregistration.common import schema
+from ..config import config
+
+OAUTH_MODE = config.get('oauth_mode', False)
 
 VALID_TYPES = ['node', 'source', 'flow', 'device', "receiver", "sender"]
 REGISTRY_PORT = 4001
@@ -171,7 +174,7 @@ class RoutesCommon(object):
         return ['resource/', 'health/']
 
     @route('/resource', methods=['GET', 'POST'], auto_json=False)
-    @RequiresAuth()
+    @RequiresAuth(condition=OAUTH_MODE)
     def __resource(self):
         if request.method == 'POST':
             req_data = request.get_data()
@@ -205,7 +208,7 @@ class RoutesCommon(object):
         return r
 
     @route('/resource/<resource_type>/<rname>', methods=['GET', 'DELETE'])
-    @RequiresAuth()
+    @RequiresAuth(condition=OAUTH_MODE)
     def __resource_type_name(self, resource_type, rname):
         if request.method == 'DELETE':
             r = self._delete(resource_type, rname)
@@ -232,7 +235,7 @@ class RoutesCommon(object):
         return self.registry.getresources('nodes')
 
     @route('/health/nodes/<k>', methods=['GET', 'POST'])
-    @RequiresAuth()
+    @RequiresAuth(condition=OAUTH_MODE)
     def __health_type_name(self, k):
         if request.method == 'POST':
             r = self._health(k)

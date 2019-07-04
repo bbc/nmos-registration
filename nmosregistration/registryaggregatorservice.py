@@ -12,28 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from nmoscommon.mdns import MDNSEngine
-from nmoscommon.utils import getLocalIP
-from nmosregistration.aggregation import AggregatorAPI, AGGREGATOR_APIVERSIONS
-from nmoscommon.httpserver import HttpServer
-from nmoscommon.logger import Logger
-import signal
-import time
-
-# Handle if systemd is installed instead of newer cysystemd
-try:
-    from cysystemd import daemon
-    SYSTEMD_READY = daemon.Notification.READY
-except ImportError:
-    from systemd import daemon
-    SYSTEMD_READY = "READY=1"
-
-import os
-import json
-
 import gevent
 from gevent import monkey
 monkey.patch_all()
+
+from nmoscommon.mdns import MDNSEngine # noqa E402
+from nmoscommon.utils import getLocalIP # noqa E402
+from nmosregistration.aggregation import AggregatorAPI, AGGREGATOR_APIVERSIONS # noqa E402
+from nmoscommon.httpserver import HttpServer # noqa E402
+from nmoscommon.logger import Logger # noqa E402
+from .config import config # noqa E402
+import signal # noqa E402
+import time # noqa E402
+
+# Handle if systemd is installed instead of newer cysystemd
+try:
+    from cysystemd import daemon # noqa E402
+    SYSTEMD_READY = daemon.Notification.READY
+except ImportError:
+    from systemd import daemon # noqa E402
+    SYSTEMD_READY = "READY=1"
 
 HOST = getLocalIP()
 SERVICE_PORT = 8235
@@ -47,28 +45,12 @@ REGISTRY_PORT = 4001
 
 class RegistryAggregatorService(object):
     def __init__(self, logger=None, interactive=False):
-        self.config = {"priority": 100, "https_mode": "disabled", "enable_mdns": True}
-        self._load_config()
+        self.config = config
         self.running = False
         self.httpServer = None
         self.interactive = interactive
         self.mdns = MDNSEngine()
         self.logger = Logger("aggregation", logger)
-
-    def _load_config(self):
-        try:
-            # Check for current nmos config file and legacy ipstudio file
-            nmos_config_file = "/etc/nmos-registration/config.json"
-            ipstudio_config_file = "/etc/ips-regaggregator/config.json"
-            if os.path.isfile(nmos_config_file):
-                f = open(nmos_config_file, 'r')
-            elif os.path.isfile(ipstudio_config_file):
-                f = open(ipstudio_config_file, 'r')
-            if f:
-                extra_config = json.loads(f.read())
-                self.config.update(extra_config)
-        except Exception as e:
-            print("Exception loading config: {}".format(e))
 
     def start(self):
         if self.running:
