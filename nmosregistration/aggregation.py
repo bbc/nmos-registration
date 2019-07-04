@@ -56,16 +56,16 @@ class AggregatorAPI(WebAPI):
             garbage_collect_interval = int(self._config.get("garbage_collect_interval", 10))
             self._garbage_collector = GarbageCollect(identifier=HOST, registry=registry, interval=garbage_collect_interval)
 
-        self._v1_0_api = v1_0.Routes(logger=logger, registry=registry)
+        self._v1_0_api = v1_0.Routes(logger=logger, registry=registry, resource_expiry=self._config['resource_expiry'])
         self.add_routes(self._v1_0_api, basepath="/x-nmos/registration/v1.0")
 
-        self._v1_1_api = v1_1.Routes(logger=logger, registry=registry)
+        self._v1_1_api = v1_1.Routes(logger=logger, registry=registry, resource_expiry=self._config['resource_expiry'])
         self.add_routes(self._v1_1_api, basepath="/x-nmos/registration/v1.1")
 
-        self._v1_2_api = v1_2.Routes(logger=logger, registry=registry)
+        self._v1_2_api = v1_2.Routes(logger=logger, registry=registry, resource_expiry=self._config['resource_expiry'])
         self.add_routes(self._v1_2_api, basepath="/x-nmos/registration/v1.2")
 
-        self._v1_3_api = v1_3.Routes(logger=logger, registry=registry)
+        self._v1_3_api = v1_3.Routes(logger=logger, registry=registry, resource_expiry=self._config['resource_expiry'])
         self.add_routes(self._v1_3_api, basepath="/x-nmos/registration/v1.3")
 
     @route('/')

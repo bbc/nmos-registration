@@ -1,13 +1,14 @@
 {
-    "priority": 100,
+    "priority": 169,
     "https_mode": "disabled",
     "enable_mdns": true,
     "registry": {
-        "type": "etcd",
-        "hosts": ["localhost"],
-        "port": 4001,
+        "type": "couchbase",
+        "hosts": [""],
+        "port": 8091,
         "username": "",
         "password": "",
         "bucket": ""
-    }
+    },
+    "resource_expiry": 12
 }

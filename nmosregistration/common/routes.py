@@ -36,12 +36,13 @@ NODE_SEEN_TTL = 12  # seconds until a node considered "dead".
 
 class RoutesCommon(object):
 
-    def __init__(self, logger, registry, api_version="v1.0", api_schema=schema):
+    def __init__(self, logger, registry, api_version="v1.0", api_schema=schema, resource_expiry=NODE_SEEN_TTL):
         self.logger = logger
         self.registry = registry
         self.modifier = RegModifier(logger=self.logger)
         self.api_version = api_version
         self.api_schema = api_schema
+        self.resource_expiry = resource_expiry
 
     def _ensure_parents(self, resource_type, resource):
         if resource_type == "device":
@@ -93,7 +94,7 @@ class RoutesCommon(object):
             
             if self.registry.type == 'couchbase':
                 reg_response = self.registry.put(
-                    resource_type_plural, resource_id, json.dumps(resource_data), port=REGISTRY_PORT, ttl=NODE_SEEN_TTL
+                    resource_type_plural, resource_id, json.dumps(resource_data), port=REGISTRY_PORT, ttl=self.resource_expiry
                 )
             else:
                 reg_response = self.registry.put(
@@ -109,7 +110,7 @@ class RoutesCommon(object):
             
             # Add an initial heartbeat if this is a node resource
             if self.registry.type == 'etcd' and resource_type == 'node':
-                hb_r = self.registry.put_health(resource_id, int(time.time()), ttl=NODE_SEEN_TTL, port=REGISTRY_PORT)
+                hb_r = self.registry.put_health(resource_id, int(time.time()), ttl=self.resource_expiry, port=REGISTRY_PORT)
                 if hb_r.status_code not in [204, 201, 200]:
                     self.logger.writeWarning("could not add initial heartbeat: {}".format(hb_r))
                     return hb_r
@@ -141,7 +142,7 @@ class RoutesCommon(object):
             return 404
 
         try:
-            r = self.registry.put_health(node_id, int(time.time()), ttl=NODE_SEEN_TTL, port=REGISTRY_PORT)
+            r = self.registry.put_health(node_id, int(time.time()), ttl=self.resource_expiry, port=REGISTRY_PORT)
         except self.registry.RegistryUnavailable:
             self.logger.writeWarning("Registry unavailable.")
             abort(500, "Registry unavailable")
