@@ -23,9 +23,9 @@ from nmoscommon.auth.nmos_auth import RequiresAuth
 
 from nmosregistration.modifier import RegModifier
 from nmosregistration.common import schema
-from ..config import CONFIG_DEFAULTS
+from ..config import config
 
-OAUTH_MODE = CONFIG_DEFAULTS.get('oauth_mode', False)
+OAUTH_MODE = config.get('oauth_mode', False)
 
 VALID_TYPES = ['node', 'source', 'flow', 'device', "receiver", "sender"]
 REGISTRY_PORT = 4001
