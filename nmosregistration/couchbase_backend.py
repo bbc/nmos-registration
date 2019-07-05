@@ -62,7 +62,10 @@ class CouchbaseInterface(object):
         elif rtype == 'device':
             return value['node_id']
         elif rtype in ['receiver', 'sender', 'source', 'flow']:
-            return self.registry.get(value['device_id']).value['node_id']
+            try:
+                return self.registry.get(value['device_id']).value['node_id']
+            except KeyError:
+                return self.registry.get(self.registry.get(value['source_id']).value['device_id']).value['node_id']
 
     def get_health(self, rkey, port=None):
         return self.registry.lookup_in(

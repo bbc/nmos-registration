@@ -2,6 +2,7 @@
     "priority": 169,
     "https_mode": "disabled",
     "enable_mdns": true,
+    "service_port": 8235,
     "registry": {
         "type": "couchbase",
         "hosts": [""],

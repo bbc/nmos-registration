@@ -36,9 +36,9 @@ BUCKET_NAME = 'nmos-test'
 TEST_USERNAME = 'nmos-test'
 TEST_PASSWORD = 'password'
 
-AGGREGATOR_PORT = 8235
+AGGREGATOR_PORT = 8236
 
-API_VERSION = 'v1.2'
+API_VERSION = 'v1.0'
 
 def _initialise_cluster(host, port, bucket, username, password):
     # Initialize node
@@ -119,7 +119,7 @@ def _get_xattrs(bucket, key, xattrs):
             results[xkey] = None
     return results
 
-class TestSubmissionRouting(unittest.TestCase):
+class TestCouchbase(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.couch_container = DockerCompose('{}/tests/'.format(os.getcwd()))
@@ -143,6 +143,7 @@ class TestSubmissionRouting(unittest.TestCase):
             "bucket": BUCKET_NAME
         }
         self.registry.config['priority'] = 169
+        self.registry.service_port = AGGREGATOR_PORT
         self.registry.start()
 
         cluster = Cluster('couchbase://{}'.format(host))
@@ -392,6 +393,47 @@ class TestSubmissionRouting(unittest.TestCase):
 
         self.assertEqual(
             _get_xattrs(self.test_bucket, test_source['id'], ['node_id'])['node_id'],
+            test_node['id'] # source
+        )
+
+    def test_register_flow_with_node_xattr(self):
+        """Ensure that when a source is registered, the document is stored with the
+           correct extended attributes associating it with a parent node"""
+        test_device = doc_generator.generate_device()
+        test_source = doc_generator.generate_source()
+        test_flow = doc_generator.generate_flow()
+        del test_flow['device_id']
+        test_flow['source_id'] = test_source['id']
+        test_source['device_id'] = test_device['id']
+        test_node = doc_generator.generate_node()
+        test_node['id'] = test_device['node_id']
+
+        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'})
+        _put_doc(
+            self.test_bucket,
+            test_device['id'],
+            test_device,
+            {'resource_type': 'device', 'node_id': test_device['node_id']}
+        )
+        _put_doc(
+            self.test_bucket,
+            test_source['id'],
+            test_source,
+            {'resource_type': 'source', 'node_id': test_device['node_id']}
+        )
+
+        request_payload = {
+            'type': 'flow',
+            'data': test_flow
+        }
+
+        aggregator_response = requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/{}/resource'.format(AGGREGATOR_PORT, API_VERSION),
+            json=request_payload
+        )
+
+        self.assertEqual(
+            _get_xattrs(self.test_bucket, test_flow['id'], ['node_id'])['node_id'],
             test_node['id'] # source
         )
 

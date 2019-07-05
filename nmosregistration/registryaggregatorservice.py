@@ -51,6 +51,7 @@ class RegistryAggregatorService(object):
         self.interactive = interactive
         self.mdns = MDNSEngine()
         self.logger = Logger("aggregation", logger)
+        self.service_port = SERVICE_PORT
 
     def start(self):
         if self.running:
@@ -59,7 +60,7 @@ class RegistryAggregatorService(object):
 
         self.mdns.start()
 
-        self.httpServer = HttpServer(AggregatorAPI, SERVICE_PORT, '0.0.0.0', api_args=[self.logger, self.config])
+        self.httpServer = HttpServer(AggregatorAPI, self.service_port, '0.0.0.0', api_args=[self.logger, self.config])
         self.httpServer.start()
         while not self.httpServer.started.is_set():
             print("Waiting for httpserver to start...")
