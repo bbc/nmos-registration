@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.7.8
+- Update schemas for v1.3 and earlier changes
+
 ## 0.7.7
 - Import config from seperate file, add OAUTH_MODE config parameter
 
