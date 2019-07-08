@@ -248,4 +248,3 @@ SCHEMA = {'device': {u'$schema': u'http://json-schema.org/draft-04/schema#',
                           u'parents'],
             u'title': u'Source resource',
             u'type': u'object'}}
-None

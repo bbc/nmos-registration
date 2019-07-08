@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
+
 import sys
 import json
 import pprint
@@ -48,4 +50,5 @@ if __name__ == '__main__':
     print('Defines mapping of resource types to schema')
     print('Generated. Do not edit!')
     print('"""')
-    print('SCHEMA = ', pprint.pprint(schema))
+    print('SCHEMA = ', end='')
+    pprint.pprint(schema)
