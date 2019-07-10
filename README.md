@@ -29,6 +29,7 @@ The native Registration API configuration should consist of a JSON object in the
 *   **priority:** \[integer\] Sets a priority value for this Registration API instance between 0 and 255. A value of 100+ indicates a development rather than production instance. Default: 100.
 *   **https_mode:** \[string\] Switches the API between HTTP and HTTPS operation. "disabled" indicates HTTP mode is in use, "enabled" indicates HTTPS mode is in use. Default: "disabled".
 *   **enable_mdns:** \[boolean\] Provides a mechanism to disable mDNS announcements in an environment where unicast DNS is preferred. Default: true.
+*   **oauth_mode:** \[boolean\] Switches the API between being secured using OAuth2 and not using authorization. Default: false.
 
 An example configuration file is shown below:
 
@@ -36,7 +37,8 @@ An example configuration file is shown below:
 {
   "priority": "30",
   "https_mode": "enabled",
-  "enable_mdns": false
+  "enable_mdns": false,
+  "oauth_mode": true
 }
 ```
 
