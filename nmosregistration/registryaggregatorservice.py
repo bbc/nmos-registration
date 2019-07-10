@@ -103,7 +103,12 @@ class RegistryAggregatorService(object):
         return False
 
     def _mdns_txt(self, priority, versions, protocol, oauth_mode):
-        return {"pri": priority, "api_ver": ",".join(versions), "api_proto": protocol, "api_auth": oauth_mode}
+        return {
+            "pri": priority,
+            "api_ver": ",".join(versions),
+            "api_proto": protocol,
+            "api_auth": str(oauth_mode).lower()
+        }
 
     def run(self):
         self.running = True
