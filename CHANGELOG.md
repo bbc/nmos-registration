@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.7.9
+- Add `api_auth` text record to multicast announcements
+
 ## 0.7.8
 - Update schemas for v1.3 and earlier changes
 
