@@ -6,11 +6,32 @@ The API will present itself at [http://localhost:8235/x-nmos/registration/].
 
 ## Installing with Python
 
-Before installing this library please make sure you have installed the [NMOS Common Library](https://github.com/bbc/nmos-common), on which this API depends. The registration API also requires [etcd](https://github.com/coreos/etcd) to be installed. For debain distributions this can be installed using apt:
+Before installing this library please make sure you have installed the [NMOS Common Library](https://github.com/bbc/nmos-common), on which this API depends.
+
+The registration API also requires a datastore. Either [etcd](https://github.com/coreos/etcd) or [Couchbase Server](https://www.couchbase.com) to be installed.
+
+The legacy etcd store can be installed on debain distributions using apt:
 
 ```
 sudo apt-get install etcd
 
+```
+
+The modern Couchbase datastore [requires some further steps](https://docs.couchbase.com/python-sdk/2.5/start-using-sdk.html). The Python package depends on the C `libcouchbase` SDK, installed on debian distributions as follows:
+
+```
+# Only needed during first-time setup:
+wget http://packages.couchbase.com/releases/couchbase-release/couchbase-release-1.0-6-amd64.deb
+sudo dpkg -i couchbase-release-1.0-6-amd64.deb
+# Will install or upgrade packages
+sudo apt-get update
+sudo apt-get install libcouchbase-dev libcouchbase2-bin build-essential
+```
+
+In addition `libsystemd-dev` is required to  be installed for `cysystemd`:
+
+```
+sudo apt install libsystemd-dev
 ```
 
 Once all dependencies are satisfied run the following commands to install the API:
@@ -69,6 +90,10 @@ from nmosregistration.registryaggregatorservice import RegistryAggregatorService
 service = RegistryAggregatorService()
 service.run() # Runs forever
 ```
+
+### Local Development Datastore
+
+To run a local instance of Couchbase Server, the easiest approach is to run `docker-compose` in the `tests/` directory and run a test container. Some setup is required, either through a web GUI accessible via `http://[host]:8091` or POSTing the http requests specified in `_initialise_cluster()` within `test_couchbase` in `tests/v1_0/`.
 
 ## Tests
 
