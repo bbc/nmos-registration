@@ -26,8 +26,8 @@ import time
 from nmoscommon.timestamp import Timestamp
 from testcontainers.compose import DockerCompose
 from testcontainers.core.container import DockerContainer
-from . import util
-import tests.helpers.doc_generator as doc_generator
+from tests.helpers import util
+from tests.helpers import doc_generator
 
 from nmosregistration.registryaggregatorservice import RegistryAggregatorService
 from nmosregistration.couchbase_backend import CouchbaseInterface
@@ -119,7 +119,7 @@ def _get_xattrs(bucket, key, xattrs):
             results[xkey] = None
     return results
 
-class TestSubmissionRouting(unittest.TestCase):
+class TestCouchbase(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.couch_container = DockerCompose('{}/tests/'.format(os.getcwd()))
