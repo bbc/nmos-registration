@@ -45,10 +45,11 @@ class AggregatorAPI(WebAPI):
                 cluster_address=config['registry']['hosts'],
                 username=config['registry']['username'],
                 password=config['registry']['password'],
-                bucket=config['registry']['bucket']
+                bucket=config['registry']['bucket'],
             )
         else:
             registry = EtcdInterface()
+            registry.port = config['registry']['port']
         super(AggregatorAPI, self).__init__()
         self._config = config
 

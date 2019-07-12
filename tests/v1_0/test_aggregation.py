@@ -47,6 +47,7 @@ class MockLogger():
 
 class MockRegistry():
     type = 'etcd'
+    port = None
     def __init__(self):
         self.invocations = []
 
@@ -68,6 +69,7 @@ class MockRegistry():
 
 class MockRegistry_broken():
     type = 'etcd'
+    port = None
     def __init__(self):
         self.invocations = []
 
@@ -89,6 +91,7 @@ class TestAggregatorAPI(unittest.TestCase):
     def setUp(self):
         self.mock_log = MockLogger()
         self.mock_registry = MockRegistry()
+        self.mock_registry.port = 4001
         self.api = v1_0.Routes(logger=self.mock_log, registry=self.mock_registry)
 
     def test_add_resource(self):
@@ -188,6 +191,7 @@ class TestAggregatorAPI_NoRegistry(unittest.TestCase):
     def setUp(self):
         self.mock_log = MockLogger()
         self.mock_registry = MockRegistry_broken()
+        self.mock_registry.port = 4001
         self.api = v1_0.Routes(logger=self.mock_log, registry=self.mock_registry)
 
     def test_add_resource_no_registry(self):

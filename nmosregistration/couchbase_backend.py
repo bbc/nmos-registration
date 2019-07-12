@@ -46,6 +46,7 @@ def _legacy_key_lookup(key):
 
 class CouchbaseInterface(object):
     type = 'couchbase'
+    port = None
     def __init__(self, cluster_address, username, password, bucket, *args, **kwargs):
         self.cluster = Cluster('couchbase://{}'.format(','.join(cluster_address)))
         auth = PasswordAuthenticator(username, password)

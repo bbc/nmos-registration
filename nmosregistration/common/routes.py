@@ -30,7 +30,7 @@ OAUTH_MODE = config.get('oauth_mode', False)
 from requests.models import Response
 
 VALID_TYPES = ['node', 'source', 'flow', 'device', "receiver", "sender"]
-REGISTRY_PORT = 2379
+
 NODE_SEEN_TTL = 12  # seconds until a node considered "dead".
 
 
@@ -91,14 +91,14 @@ class RoutesCommon(object):
 
             # Add in the API version we are registering with
             resource_data['@_apiversion'] = self.api_version
-            
+
             if self.registry.type == 'couchbase':
                 reg_response = self.registry.put(
-                    resource_type_plural, resource_id, json.dumps(resource_data), port=REGISTRY_PORT, ttl=self.resource_expiry
+                    resource_type_plural, resource_id, json.dumps(resource_data), port=self.registry.port, ttl=self.resource_expiry
                 )
             else:
                 reg_response = self.registry.put(
-                    resource_type_plural, resource_id, json.dumps(resource_data), port=REGISTRY_PORT
+                    resource_type_plural, resource_id, json.dumps(resource_data), port=self.registry.port
                 )
 
             reg_response.autocorrect_location_header = False
@@ -107,10 +107,10 @@ class RoutesCommon(object):
             )
 
             self.logger.writeInfo("register {} {}: {}".format(resource_type, resource_id, reg_response.status_code))
-            
+
             # Add an initial heartbeat if this is a node resource
             if self.registry.type == 'etcd' and resource_type == 'node':
-                hb_r = self.registry.put_health(resource_id, int(time.time()), ttl=self.resource_expiry, port=REGISTRY_PORT)
+                hb_r = self.registry.put_health(resource_id, int(time.time()), ttl=self.resource_expiry, port=self.registry.port)
                 if hb_r.status_code not in [204, 201, 200]:
                     self.logger.writeWarning("could not add initial heartbeat: {}".format(hb_r))
                     return hb_r
@@ -132,7 +132,7 @@ class RoutesCommon(object):
 
         # check node is registered
         try:
-            check_r = self.registry.get("nodes", node_id, port=REGISTRY_PORT)
+            check_r = self.registry.get("nodes", node_id, port=self.registry.port)
         except self.registry.RegistryUnavailable:
             self.logger.writeWarning("Registry unavailable.")
             abort(500, "Registry unavailable")
@@ -142,7 +142,7 @@ class RoutesCommon(object):
             return 404
 
         try:
-            r = self.registry.put_health(node_id, int(time.time()), ttl=self.resource_expiry, port=REGISTRY_PORT)
+            r = self.registry.put_health(node_id, int(time.time()), ttl=self.resource_expiry, port=self.registry.port)
         except self.registry.RegistryUnavailable:
             self.logger.writeWarning("Registry unavailable.")
             abort(500, "Registry unavailable")
@@ -172,7 +172,7 @@ class RoutesCommon(object):
         # Stale data will still need to be cleaned up eventually.
         self.logger.writeInfo("unregister {} {}".format(resource_type, resource_id))
         try:
-            r = self.registry.delete(resource_type, resource_id, port=REGISTRY_PORT)
+            r = self.registry.delete(resource_type, resource_id, port=self.registry.port)
         except self.registry.RegistryUnavailable:
             self.logger.writeWarning("Couldn't delete resource. Registry unavailable.")
             abort(500, "Registry unavailable")
@@ -255,7 +255,7 @@ class RoutesCommon(object):
                 abort(404)
 
         try:
-            health = self.registry.get_health(k, port=REGISTRY_PORT)
+            health = self.registry.get_health(k, port=self.registry.port)
         except self.registry.RegistryUnavailable:
             abort(500, "Registry unavailable")
 

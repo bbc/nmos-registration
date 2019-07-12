@@ -57,6 +57,7 @@ def _prune_empty_branches(key, port=2379):
 
 class EtcdInterface(object):
     type = 'etcd'
+    port = None
 
     class RegistryUnavailable(Exception):
         pass
