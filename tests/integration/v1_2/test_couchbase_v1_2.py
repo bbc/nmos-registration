@@ -80,7 +80,7 @@ def _initialise_cluster(host, port, bucket, username, password):
             'flushEnabled': 1,
             'replicaNumber': 0,
             'evictionPolicy': 'valueOnly',
-            'ramQuotaMB': 2048,
+            'ramQuotaMB': 1024,
             'bucketType': 'couchbase',
             'name': BUCKET_NAME,
         }

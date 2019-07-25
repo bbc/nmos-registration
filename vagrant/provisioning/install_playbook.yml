@@ -1,0 +1,7 @@
+---
+# Provision base image
+- name: Provision NMOS server
+  hosts: registration
+  become: yes
+  roles: 
+    - nmos-registration-setup
