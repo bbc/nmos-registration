@@ -13,28 +13,23 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+from requests import Response
+import json
+import couchbase.exceptions
+import couchbase.subdocument as subdoc
+from couchbase.cluster import Cluster, PasswordAuthenticator
+from nmoscommon.timestamp import Timestamp
+from flask import make_response
 
 from gevent import monkey
 monkey.patch_all()
 
 # following block all suffixed with `# noqa E402` - follow up
-import requests
-from requests.adapters import TimeoutSauce
-from requests import Response
-import json
-import gevent
-from six.moves.urllib.parse import urlencode
-import couchbase.exceptions
-import couchbase.subdocument as subdoc
-from couchbase.cluster import Cluster, PasswordAuthenticator
-import time
-from nmoscommon.timestamp import Timestamp
-import string
-from flask import make_response
 
 legacy_key_table = {
     '@_apiversion': 'api_version'
 }
+
 
 def _legacy_key_lookup(key):
     try:
@@ -44,9 +39,11 @@ def _legacy_key_lookup(key):
         #       - May just be sufficient to keep table and return otherwise, need to see other cases.
         return key
 
+
 class CouchbaseInterface(object):
     type = 'couchbase'
     port = None
+
     def __init__(self, cluster_address, username, password, bucket, *args, **kwargs):
         self.cluster = Cluster('couchbase://{}'.format(','.join(cluster_address)))
         auth = PasswordAuthenticator(username, password)
@@ -95,7 +92,7 @@ class CouchbaseInterface(object):
                     subdoc.upsert(_legacy_key_lookup(key), value, xattr=True)
                 ))
 
-            failed_subdoc_ops = [result for result in subdoc_results if result.success == False]
+            failed_subdoc_ops = [result for result in subdoc_results if result.success is False]
             if len(failed_subdoc_ops) > 0:
                 return failed_subdoc_ops
 
@@ -103,7 +100,7 @@ class CouchbaseInterface(object):
             ttl = self.get_health(xattrs['node_id'])
 
         try:
-            touch_result = self.registry.touch(rkey, ttl=ttl)
+            self.registry.touch(rkey, ttl=ttl)
         except Exception:
             self.remove(rkey)
             r = make_response(500)
@@ -140,7 +137,7 @@ class CouchbaseInterface(object):
             .format(self.bucket, rkey)
         )
         residents = []
-        for resident in registry.n1ql_query(query):
+        for resident in self.registry.n1ql_query(query):
             residents.append(resident['id'])
 
         return residents
@@ -179,12 +176,11 @@ class CouchbaseInterface(object):
 
     def touch(self, rkey, ttl=12):
         return self.registry.touch(rkey, ttl=ttl)
-        
 
     def put_health(self, rkey, value, ttl=12, port=None):
         for descendent in self.get_descendents('node', rkey):
             self.touch(descendent, ttl=ttl)
-        if self.touch(rkey, ttl).success == True:
+        if self.touch(rkey, ttl).success is True:
             return make_response(json.dumps({'health': value}), 200)
 
     def remove(self, rkey):

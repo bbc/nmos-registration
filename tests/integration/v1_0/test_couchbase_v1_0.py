@@ -12,11 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from six import text_type
 
 import unittest
-import uuid
-import copy
 import requests
 from couchbase.cluster import Cluster, PasswordAuthenticator
 import couchbase.subdocument as subdoc
@@ -25,12 +22,10 @@ import os
 import time
 from nmoscommon.timestamp import Timestamp
 from testcontainers.compose import DockerCompose
-from testcontainers.core.container import DockerContainer
 from tests.helpers import util
 from tests.helpers import doc_generator
 
 from nmosregistration.registryaggregatorservice import RegistryAggregatorService
-from nmosregistration.couchbase_backend import CouchbaseInterface
 
 BUCKET_NAME = 'nmos-test'
 TEST_USERNAME = 'nmos-test'
@@ -40,61 +35,63 @@ AGGREGATOR_PORT = 8236
 
 API_VERSION = 'v1.0'
 
+
 def _initialise_cluster(host, port, bucket, username, password):
     # Initialize node
-    requests.post('http://{0}:{1}/nodes/self/controller/settings'.format(host,port),
-        auth=('Administrator', 'password'),
-        data={
-            'path': '/opt/couchbase/var/lib/couchbase/data',
-            'index_path': '/opt/couchbase/var/lib/couchbase/data',
-            'cbas_path': '/opt/couchbase/var/lib/couchbase/data',
-        }
-    )
+    requests.post('http://{0}:{1}/nodes/self/controller/settings'.format(host, port),
+                  auth=('Administrator', 'password'),
+                  data={
+                      'path': '/opt/couchbase/var/lib/couchbase/data',
+                      'index_path': '/opt/couchbase/var/lib/couchbase/data',
+                      'cbas_path': '/opt/couchbase/var/lib/couchbase/data',
+                  }
+                  )
     # Rename node
-    requests.post('http://{0}:{1}/node/controller/rename'.format(host,port),
-        auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
-        data={
-            'hostname': '127.0.0.1',
-        }
-    )
+    requests.post('http://{0}:{1}/node/controller/rename'.format(host, port),
+                  auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
+                  data={
+                      'hostname': '127.0.0.1',
+                  }
+                  )
     # Setup services
-    requests.post('http://{0}:{1}/node/controller/setupServices'.format(host,port),
-        auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
-        data={
-            'services': 'kv,index,n1ql,fts',
-        }
-    )
+    requests.post('http://{0}:{1}/node/controller/setupServices'.format(host, port),
+                  auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
+                  data={
+                      'services': 'kv,index,n1ql,fts',
+                  }
+                  )
     # Setup admin username/password
-    requests.post('http://{0}:{1}/settings/web'.format(host,port),
-        auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
-        data={
-            'password': TEST_PASSWORD,
-            'username': TEST_USERNAME,
-            'port': port,
-        }
-    )
+    requests.post('http://{0}:{1}/settings/web'.format(host, port),
+                  auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
+                  data={
+                      'password': TEST_PASSWORD,
+                      'username': TEST_USERNAME,
+                      'port': port,
+                  }
+                  )
     # Build bucket
-    requests.post('http://{0}:{1}/pools/default/buckets'.format(host,port),
-        auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, TEST_PASSWORD),
-        data={
-            'flushEnabled': 1,
-            'replicaNumber': 0,
-            'evictionPolicy': 'valueOnly',
-            'ramQuotaMB': 1024,
-            'bucketType': 'couchbase',
-            'name': BUCKET_NAME,
-        }
-    )
+    requests.post('http://{0}:{1}/pools/default/buckets'.format(host, port),
+                  auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, TEST_PASSWORD),
+                  data={
+                      'flushEnabled': 1,
+                      'replicaNumber': 0,
+                      'evictionPolicy': 'valueOnly',
+                      'ramQuotaMB': 1024,
+                      'bucketType': 'couchbase',
+                      'name': BUCKET_NAME,
+                  }
+                  )
     # Set indexer mode
-    indexer = requests.post('http://{0}:{1}/settings/indexes'.format(host,port),
-        auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, password),
-        data={
-            'indexerThreads': 0,
-            'maxRollbackPoints': 5,
-            'memorySnapshotInterval': 200,
-            'storageMode': 'forestdb',
-        }
-    )
+    requests.post('http://{0}:{1}/settings/indexes'.format(host, port),
+                  auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, password),
+                  data={
+                      'indexerThreads': 0,
+                      'maxRollbackPoints': 5,
+                      'memorySnapshotInterval': 200,
+                      'storageMode': 'forestdb',
+                  }
+                  )
+
 
 def _put_xattrs(bucket, key, xattrs, fill_timestamp_xattrs=True):
     if fill_timestamp_xattrs:
@@ -104,11 +101,13 @@ def _put_xattrs(bucket, key, xattrs, fill_timestamp_xattrs=True):
     for xkey, xvalue in xattrs.items():
         bucket.mutate_in(key, subdoc.insert(xkey, xvalue, xattr=True))
 
+
 def _put_doc(bucket, key, value, xattrs, fill_timestamp_xattrs=True, ttl=12):
     bucket.insert(key, value, ttl=ttl)
     time.sleep(1)
     _put_xattrs(bucket, key, xattrs, fill_timestamp_xattrs)
     bucket.touch(key, ttl=ttl)
+
 
 def _get_xattrs(bucket, key, xattrs):
     results = {}
@@ -118,6 +117,7 @@ def _get_xattrs(bucket, key, xattrs):
         except couchbase.exceptions.SubdocPathNotFoundError:
             results[xkey] = None
     return results
+
 
 class TestCouchbase(unittest.TestCase):
     @classmethod
@@ -131,7 +131,7 @@ class TestCouchbase(unittest.TestCase):
         
         _initialise_cluster(host, port, BUCKET_NAME, TEST_USERNAME, TEST_PASSWORD)
         
-        time.sleep(10) # TODO, properly wait for setup somehow, possible long poll?
+        time.sleep(10)  # TODO, properly wait for setup somehow, possible long poll?
 
         self.registry = RegistryAggregatorService()
         self.registry.config['registry'] = {
@@ -164,7 +164,7 @@ class TestCouchbase(unittest.TestCase):
             'data': doc_body
         }
 
-        aggregator_response = requests.post(
+        requests.post(
             'http://0.0.0.0:{}/x-nmos/registration/{}/resource'.format(AGGREGATOR_PORT, API_VERSION),
             json=request_payload
         )
@@ -183,7 +183,9 @@ class TestCouchbase(unittest.TestCase):
         )
 
         self.assertEqual(aggregator_response.status_code, 200)
-        self.assertEqual(aggregator_response.headers['location'], '/x-nmos/registration/{}/resource/nodes/{}/'.format(API_VERSION, doc_body['id']))
+        self.assertEqual(aggregator_response.headers['location'], '/x-nmos/registration/{}/resource/nodes/{}/'.format(
+            API_VERSION, doc_body['id'])
+        )
         self.assertDictEqual(aggregator_response.json(), doc_body)
 
     def test_xattrs_write(self):
@@ -197,7 +199,7 @@ class TestCouchbase(unittest.TestCase):
         }
 
         post_time = Timestamp.get_time().to_nanosec()
-        aggregator_response = requests.post(
+        requests.post(
             'http://0.0.0.0:{}/x-nmos/registration/{}/resource'.format(AGGREGATOR_PORT, API_VERSION),
             json=request_payload
         )
@@ -226,7 +228,7 @@ class TestCouchbase(unittest.TestCase):
             'data': test_node
         }
         
-        aggregator_response = requests.post(
+        requests.post(
             'http://0.0.0.0:{}/x-nmos/registration/{}/resource'.format(AGGREGATOR_PORT, API_VERSION),
             json=request_payload
         )
@@ -262,7 +264,7 @@ class TestCouchbase(unittest.TestCase):
             'data': doc_body
         }
 
-        aggregator_response = requests.post(
+        requests.post(
             'http://0.0.0.0:{}/x-nmos/registration/{}/resource'.format(AGGREGATOR_PORT, API_VERSION),
             json=request_payload
         )
@@ -273,13 +275,14 @@ class TestCouchbase(unittest.TestCase):
             self.test_bucket.get(doc_body['id'])
 
     def test_device_expiry_with_node(self):
-        """Ensure devices expire at the same time as parent nodes after registration if no further heartbeats are received"""
+        """Ensure devices expire at the same time as parent nodes after registration
+        if no further heartbeats are recieved
+        """
         test_device = doc_generator.generate_device()
         test_node = doc_generator.generate_node()
         test_node['id'] = test_device['node_id']
 
         _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'}, ttl=12)
-
 
         request_payload = {
             'type': 'device',
@@ -288,7 +291,7 @@ class TestCouchbase(unittest.TestCase):
 
         time.sleep(2)
 
-        aggregator_response = requests.post(
+        requests.post(
             'http://0.0.0.0:{}/x-nmos/registration/{}/resource'.format(AGGREGATOR_PORT, API_VERSION),
             json=request_payload
         )
@@ -313,7 +316,9 @@ class TestCouchbase(unittest.TestCase):
         time.sleep(1)
         
         aggregator_response = requests.get(
-            'http://0.0.0.0:{}/x-nmos/registration/{}/resource/node/{}'.format(AGGREGATOR_PORT, API_VERSION, test_node['id'])
+            'http://0.0.0.0:{}/x-nmos/registration/{}/resource/node/{}'.format(
+                AGGREGATOR_PORT, API_VERSION, test_node['id']
+            )
         )
 
         self.assertDictEqual(aggregator_response.json(), test_node)
@@ -334,7 +339,7 @@ class TestCouchbase(unittest.TestCase):
         with self.assertRaises(couchbase.exceptions.NotFoundError):
             self.test_bucket.get(test_device['id'])
 
-    def  test_register_device_with_node_parent(self):
+    def test_register_device_with_node_parent(self):
         """Ensure that device registers correctly, assocating with the proper node via xattrs"""
         test_device = doc_generator.generate_device()
         test_node = doc_generator.generate_node()
@@ -348,7 +353,7 @@ class TestCouchbase(unittest.TestCase):
             'type': 'device',
             'data': test_device
         }
-        aggregator_response = requests.post(
+        requests.post(
             'http://0.0.0.0:{}/x-nmos/registration/{}/resource'.format(AGGREGATOR_PORT, API_VERSION),
             json=request_payload
         )
@@ -387,14 +392,14 @@ class TestCouchbase(unittest.TestCase):
             'data': test_source
         }
 
-        aggregator_response = requests.post(
+        requests.post(
             'http://0.0.0.0:{}/x-nmos/registration/{}/resource'.format(AGGREGATOR_PORT, API_VERSION),
             json=request_payload
         )
 
         self.assertEqual(
             _get_xattrs(self.test_bucket, test_source['id'], ['node_id'])['node_id'],
-            test_node['id'] # source
+            test_node['id']  # source
         )
 
     def test_register_flow_with_node_xattr(self):
@@ -430,14 +435,14 @@ class TestCouchbase(unittest.TestCase):
             'data': test_flow
         }
 
-        aggregator_response = requests.post(
+        requests.post(
             'http://0.0.0.0:{}/x-nmos/registration/{}/resource'.format(AGGREGATOR_PORT, API_VERSION),
             json=request_payload
         )
 
         self.assertEqual(
             _get_xattrs(self.test_bucket, test_flow['id'], ['node_id'])['node_id'],
-            test_node['id'] # source
+            test_node['id']  # source
         )
 
     def test_delete_node_solo(self):
@@ -469,10 +474,14 @@ class TestCouchbase(unittest.TestCase):
         test_node['id'] = test_device['node_id']
 
         _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'})
-        _put_doc(self.test_bucket, test_device['id'], test_device, {'resource_type': 'node', 'node_id': test_device['node_id']})
-        _put_doc(self.test_bucket, test_source['id'], test_source, {'resource_type': 'node', 'node_id': test_device['node_id']})
+        _put_doc(self.test_bucket, test_device['id'], test_device, {
+            'resource_type': 'node', 'node_id': test_device['node_id']
+        })
+        _put_doc(self.test_bucket, test_source['id'], test_source, {
+            'resource_type': 'node', 'node_id': test_device['node_id']
+        })
 
-        aggregator_response = requests.delete(
+        requests.delete(
             'http://0.0.0.0:{}/x-nmos/registration/{}/resource/node/{}'.format(
                 AGGREGATOR_PORT,
                 API_VERSION,
@@ -517,7 +526,7 @@ class TestCouchbase(unittest.TestCase):
 
         prior_ttl = _get_xattrs(self.test_bucket, test_node['id'], ['$document.exptime'])['$document.exptime']
 
-        aggregator_response = requests.post(
+        requests.post(
             'http://0.0.0.0:{}/x-nmos/registration/{}/health/nodes/{}'.format(
                 AGGREGATOR_PORT,
                 API_VERSION,
@@ -553,7 +562,6 @@ class TestCouchbase(unittest.TestCase):
         # Retrieve ttl as unix timestamp such that children are inserted with same ttl as with posting to aggregator
         prior_ttl['node'] = _get_xattrs(self.test_bucket, test_node['id'], ['$document.exptime'])['$document.exptime']
 
-
         _put_doc(
             self.test_bucket,
             test_device['id'],
@@ -561,6 +569,7 @@ class TestCouchbase(unittest.TestCase):
             {'resource_type': 'device', 'node_id': test_node['id']},
             ttl=prior_ttl['node']
         )
+
         _put_doc(
             self.test_bucket,
             test_source['id'],
@@ -571,23 +580,32 @@ class TestCouchbase(unittest.TestCase):
 
         time.sleep(5)
 
-        prior_ttl['device'] = _get_xattrs(self.test_bucket, test_device['id'], ['$document.exptime'])['$document.exptime']
-        prior_ttl['source'] = _get_xattrs(self.test_bucket, test_source['id'], ['$document.exptime'])['$document.exptime']
+        prior_ttl['device'] = _get_xattrs(
+            self.test_bucket, test_device['id'], ['$document.exptime']
+        )['$document.exptime']
+        prior_ttl['source'] = _get_xattrs(
+            self.test_bucket, test_source['id'], ['$document.exptime']
+        )['$document.exptime']
 
         self.assertListEqual(list(prior_ttl.values()), [prior_ttl['node'], prior_ttl['node'], prior_ttl['node']])
 
-        aggregator_response = requests.post(
+        requests.post(
             'http://0.0.0.0:{}/x-nmos/registration/{}/health/nodes/{}'.format(
                 AGGREGATOR_PORT,
                 API_VERSION,
                 test_node['id']
             )
         )
-        
 
-        post_ttl['node'] = _get_xattrs(self.test_bucket, test_node['id'], ['$document.exptime'])['$document.exptime']
-        post_ttl['device'] = _get_xattrs(self.test_bucket, test_device['id'], ['$document.exptime'])['$document.exptime']
-        post_ttl['source'] = _get_xattrs(self.test_bucket, test_source['id'], ['$document.exptime'])['$document.exptime']
+        post_ttl['node'] = _get_xattrs(
+            self.test_bucket, test_node['id'], ['$document.exptime']
+        )['$document.exptime']
+        post_ttl['device'] = _get_xattrs(
+            self.test_bucket, test_device['id'], ['$document.exptime']
+        )['$document.exptime']
+        post_ttl['source'] = _get_xattrs(
+            self.test_bucket, test_source['id'], ['$document.exptime']
+        )['$document.exptime']
 
         self.assertListEqual(list(post_ttl.values()), [post_ttl['node'], post_ttl['node'], post_ttl['node']])
 
@@ -615,6 +633,7 @@ class TestCouchbase(unittest.TestCase):
     def tearDownClass(self):
         self.couch_container.stop()
         self.registry.stop()
+
 
 if __name__ == '__main__':
     unittest.main()
