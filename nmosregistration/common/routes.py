@@ -27,8 +27,6 @@ from ..config import config
 
 OAUTH_MODE = config.get('oauth_mode', False)
 
-from requests.models import Response
-
 VALID_TYPES = ['node', 'source', 'flow', 'device', "receiver", "sender"]
 
 NODE_SEEN_TTL = 12  # seconds until a node considered "dead".
@@ -94,7 +92,11 @@ class RoutesCommon(object):
 
             if self.registry.type == 'couchbase':
                 reg_response = self.registry.put(
-                    resource_type_plural, resource_id, json.dumps(resource_data), port=self.registry.port, ttl=self.resource_expiry
+                    resource_type_plural,
+                    resource_id,
+                    json.dumps(resource_data),
+                    port=self.registry.port,
+                    ttl=self.resource_expiry
                 )
             else:
                 reg_response = self.registry.put(
@@ -110,7 +112,9 @@ class RoutesCommon(object):
 
             # Add an initial heartbeat if this is a node resource
             if self.registry.type == 'etcd' and resource_type == 'node':
-                hb_r = self.registry.put_health(resource_id, int(time.time()), ttl=self.resource_expiry, port=self.registry.port)
+                hb_r = self.registry.put_health(
+                    resource_id, int(time.time()), ttl=self.resource_expiry, port=self.registry.port
+                )
                 if hb_r.status_code not in [204, 201, 200]:
                     self.logger.writeWarning("could not add initial heartbeat: {}".format(hb_r))
                     return hb_r
