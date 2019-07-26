@@ -77,21 +77,23 @@ class RegistryAggregatorService(object):
         if not str(priority).isdigit():
             priority = 0
 
+        oauth_mode = self.config.get('oauth_mode', False)
+
         if self.config["https_mode"] != "enabled" and self.config["enable_mdns"]:
             self.mdns.register(DNS_SD_NAME + "_http", DNS_SD_TYPE, DNS_SD_HTTP_PORT,
-                               self._mdns_txt(priority, AGGREGATOR_APIVERSIONS, "http"))
+                               self._mdns_txt(priority, AGGREGATOR_APIVERSIONS, "http", oauth_mode))
             if self._require_legacy_mdns():
                 # Send out deprecated advertisement
                 self.mdns.register(DNS_SD_NAME + "_http_dep", DNS_SD_LEGACY_TYPE, DNS_SD_HTTP_PORT,
-                                   self._mdns_txt(priority, AGGREGATOR_APIVERSIONS, "http"))
+                                   self._mdns_txt(priority, AGGREGATOR_APIVERSIONS, "http", oauth_mode))
 
         if self.config["https_mode"] != "disabled" and self.config["enable_mdns"]:
             self.mdns.register(DNS_SD_NAME + "_https", DNS_SD_TYPE, DNS_SD_HTTPS_PORT,
-                               self._mdns_txt(priority, AGGREGATOR_APIVERSIONS, "https"))
+                               self._mdns_txt(priority, AGGREGATOR_APIVERSIONS, "https", oauth_mode))
             if self._require_legacy_mdns():
                 # Send out deprecated advertisement
                 self.mdns.register(DNS_SD_NAME + "_https_dep", DNS_SD_LEGACY_TYPE, DNS_SD_HTTPS_PORT,
-                                   self._mdns_txt(priority, AGGREGATOR_APIVERSIONS, "https"))
+                                   self._mdns_txt(priority, AGGREGATOR_APIVERSIONS, "https", oauth_mode))
 
     def _require_legacy_mdns(self):
         legacy_apiversions = ["v1.0", "v1.1", "v1.2"]
@@ -100,8 +102,13 @@ class RegistryAggregatorService(object):
                 return True
         return False
 
-    def _mdns_txt(self, priority, versions, protocol):
-        return {"pri": priority, "api_ver": ",".join(versions), "api_proto": protocol}
+    def _mdns_txt(self, priority, versions, protocol, oauth_mode):
+        return {
+            "pri": priority,
+            "api_ver": ",".join(versions),
+            "api_proto": protocol,
+            "api_auth": str(oauth_mode).lower()
+        }
 
     def run(self):
         self.running = True
