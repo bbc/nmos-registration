@@ -45,9 +45,9 @@ pipeline {
         stage("Setup Environment") {
             steps {
                 sh 'git clean -dfx -e .vagrant'
-            }
-            withBBCGithubSSHAgent {
-                bbcVagrantUp(update: true)
+                withBBCGithubSSHAgent {
+                    bbcVagrantUp(update: true)
+                }
             }
         }
         stage("Finalise Vagrant Setup") {
