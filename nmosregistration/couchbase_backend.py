@@ -100,7 +100,9 @@ class CouchbaseInterface(object):
             ttl = self.get_health(xattrs['node_id'])
 
         try:
-            self.registry.touch(rkey, ttl=ttl)
+            touch_result = self.registry.touch(rkey, ttl=ttl)
+            if touch_result.success is True:
+                r = make_response(200)
         except Exception:
             self.remove(rkey)
             r = make_response(500)
