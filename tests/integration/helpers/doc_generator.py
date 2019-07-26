@@ -79,7 +79,7 @@ source_format = {
         'tags': {},
         'caps': {},
         'device_id': re.compile('^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'),
-        'parents': [re.compile('^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')],  
+        'parents': [re.compile('^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')],
         'clock_name': re.compile('clk[0-9]'),
         'format': re.compile('urn:x-nmos:format:(video|data|mux)')
     },

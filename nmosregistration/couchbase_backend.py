@@ -141,7 +141,7 @@ class CouchbaseInterface(object):
             residents.append(resident['id'])
 
         return residents
-    
+
     def get_descendents(self, rtype, rkey):
         if rtype == 'node':
             query = couchbase.n1ql.N1QLQuery(
@@ -161,7 +161,7 @@ class CouchbaseInterface(object):
         except couchbase.n1ql.N1QLError:
             return []
         return descendents
-    
+
     # TODO: Strip useless legacy resource_type nonsense? Validate returned doc is correct type??
     def get(self, resource_type, rkey, port=None):
         return self.registry.get(rkey).value

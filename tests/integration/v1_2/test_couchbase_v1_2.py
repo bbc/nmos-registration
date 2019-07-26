@@ -127,9 +127,9 @@ class TestCouchbase(unittest.TestCase):
 
         host = self.couch_container.get_service_host('couchbase', 8091)
         port = self.couch_container.get_service_port('couchbase', 8091)
-        
+
         _initialise_cluster(host, port, BUCKET_NAME, TEST_USERNAME, TEST_PASSWORD)
-        
+
         time.sleep(10)  # TODO, properly wait for setup somehow, possible long poll?
 
         self.registry = RegistryAggregatorService()
@@ -225,7 +225,7 @@ class TestCouchbase(unittest.TestCase):
             'type': 'node',
             'data': test_node
         }
-        
+
         requests.post(
             'http://0.0.0.0:{}/x-nmos/registration/{}/resource'.format(AGGREGATOR_PORT, API_VERSION),
             json=request_payload
@@ -312,7 +312,7 @@ class TestCouchbase(unittest.TestCase):
 
         _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node', 'api_version': 'v1.2'})
         time.sleep(1)
-        
+
         aggregator_response = requests.get(
             'http://0.0.0.0:{}/x-nmos/registration/{}/resource/node/{}'.format(
                 AGGREGATOR_PORT, API_VERSION, test_node['id']
