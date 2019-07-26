@@ -53,7 +53,7 @@ pipeline {
         stage("Finalise Vagrant Setup") {
             steps{
                 sh 'vagrant ssh -c "sudo gpasswd -a vagrant docker"'
-                sh 'vagrant down && vagrant up' // Should investigate further, but a restart is required for docker to pull image
+                sh 'vagrant halt && vagrant up' // Should investigate further, but a restart is required for docker to pull image
                 sh 'vagrant ssh -c "cd /vagrant-root/ && make clean"'
             }
         }
