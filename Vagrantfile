@@ -29,8 +29,8 @@ Vagrant.configure("2") do |config|
         vb.customize ["storagectl", :id, "--name", "SATA Controller", "--hostiocache", "on" ]
       end
     registration.vm.network "private_network", type: "dhcp"
-    registration.vm.network "forwarded_port", guest: 80, host: 8080
-    registration.vm.network "forwarded_port", guest: 8091, host: 1908
+    registration.vm.network "forwarded_port", guest: 80, host: 9090, auto_correct: true
+    registration.vm.network "forwarded_port", guest: 8091, host: 1908, auto_orrect: true
     registration.vm.synced_folder "../", "/vagrant-root"
     registration.vm.boot_timeout = 600
   end
