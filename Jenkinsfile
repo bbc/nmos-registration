@@ -3,7 +3,6 @@
 /*
  Runs the following steps in parallel and reports results to GitHub:
  - Lint using flake8
- - Run Python 2.7 unit tests in tox
  - Run Python 3 unit tests in tox
  - Build Debian packages for supported Ubuntu versions
 
@@ -25,6 +24,7 @@ pipeline {
     parameters {
         booleanParam(name: "FORCE_PYUPLOAD", defaultValue: false, description: "Force Python artifact upload")
         booleanParam(name: "FORCE_DEBUPLOAD", defaultValue: false, description: "Force Debian package upload")
+        booleanParam(name: "DESTROY_VAGRANT", defaultValue: false, description: "Destroy Vagrant box before build?")
     }
     triggers {
         upstream (upstreamProjects: "apmm-repos/nmos-common/master")
@@ -35,30 +35,30 @@ pipeline {
     }
     stages {
         stage("Clean Environment") {
+            when {
+                expression { return params.DESTROY_VAGRANT }
+            }
             steps {
-                sh 'git clean -dfx'
+                sh 'vagrant destroy -f'
+            }
+        }
+        stage("Setup Environment") {
+            steps {
+                sh 'git clean -dfx -e .vagrant'
+            }
+            withBBCGithubSSHAgent {
+                bbcVagrantUp(update: true)
+            }
+        }
+        stage("Finalise Vagrant Setup") {
+            steps{
+                sh 'vagrant ssh -c "sudo gpasswd -a vagrant docker"'
+                sh 'vagrant down && vagrant up' // Should investigate further, but a restart is required for docker to pull image
+                sh 'vagrant ssh -c "cd /vagrant-root/ && make clean"'
             }
         }
         stage ("Tests") {
             parallel {
-                stage ("Py2.7 Linting Check") {
-                    steps {
-                        script {
-                            env.lint27_result = "FAILURE"
-                        }
-                        bbcGithubNotify(context: "lint/flake8_27", status: "PENDING")
-                        // Run the linter
-                        sh 'python2.7 -m flake8'
-                        script {
-                            env.lint27_result = "SUCCESS" // This will only run if the sh above succeeded
-                        }
-                    }
-                    post {
-                        always {
-                            bbcGithubNotify(context: "lint/flake8_27", status: env.lint27_result)
-                        }
-                    }
-                }
                 stage ("Py3 Linting Check") {
                     steps {
                         script {
@@ -77,38 +77,15 @@ pipeline {
                         }
                     }
                 }
-                stage ("Unit Tests") {
+                stage ("Tests") {
                     stages {
-                        stage ("Python 2.7 Unit Tests") {
-                            steps {
-                                script {
-                                    env.py27_result = "FAILURE"
-                                }
-                                bbcGithubNotify(context: "tests/py27", status: "PENDING")
-                                // Use a workdirectory in /tmp to avoid shebang length limitation
-                                withBBCRDPythonArtifactory {
-                                    sh 'tox -e py27 --recreate --workdir /tmp/$(basename ${WORKSPACE})/tox-py27'
-                                }
-                                script {
-                                    env.py27_result = "SUCCESS" // This will only run if the sh above succeeded
-                                }
-                            }
-                            post {
-                                always {
-                                    bbcGithubNotify(context: "tests/py27", status: env.py27_result)
-                                }
-                            }
-                        }
-                        stage ("Python 3 Unit Tests") {
+                        stage ("Python 3 Unit & Integration Tests") {
                             steps {
                                 script {
                                     env.py3_result = "FAILURE"
                                 }
                                 bbcGithubNotify(context: "tests/py3", status: "PENDING")
-                                // Use a workdirectory in /tmp to avoid shebang length limitation
-                                withBBCRDPythonArtifactory {
-                                    sh 'tox -e py3 --recreate --workdir /tmp/$(basename ${WORKSPACE})/tox-py3'
-                                }
+                                sh 'vagrant ssh -c "cd /vagrant-root/ && make test"'
                                 script {
                                     env.py3_result = "SUCCESS" // This will only run if the sh above succeeded
                                 }

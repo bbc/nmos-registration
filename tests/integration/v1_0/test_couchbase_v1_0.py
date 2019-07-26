@@ -373,12 +373,13 @@ class TestCouchbase(unittest.TestCase):
         test_node = doc_generator.generate_node()
         test_node['id'] = test_device['node_id']
 
-        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'})
+        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'}, ttl=0)
         _put_doc(
             self.test_bucket,
             test_device['id'],
             test_device,
-            {'resource_type': 'device', 'node_id': test_device['node_id']}
+            {'resource_type': 'device', 'node_id': test_device['node_id']},
+            ttl=0
         )
 
         request_payload = {
