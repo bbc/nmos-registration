@@ -220,7 +220,7 @@ class TestCouchbase(unittest.TestCase):
     def test_resource_update(self):
         test_node = doc_generator.generate_node()
 
-        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'})
+        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'}, ttl=0)
 
         test_node['href'] = 'https://www.youtube.com/watch?v=taUqt_E0aOs'
         request_payload = {

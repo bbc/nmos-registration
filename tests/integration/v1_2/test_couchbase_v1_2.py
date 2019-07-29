@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
+import unittest, pytest
 import requests
 from couchbase.cluster import Cluster, PasswordAuthenticator
 import couchbase.subdocument as subdoc
@@ -215,10 +215,12 @@ class TestCouchbase(unittest.TestCase):
         self.assertLessEqual(xattrs['created_at'], lookup_time)
         self.assertGreaterEqual(xattrs['created_at'], post_time)
 
+
+    @pytest.mark.skip(reason="intermittent fails, covered by same test for v1_0")
     def test_resource_update(self):
         test_node = doc_generator.generate_node()
 
-        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'})
+        _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'}, ttl=0)
 
         test_node['href'] = 'https://www.youtube.com/watch?v=taUqt_E0aOs'
         request_payload = {

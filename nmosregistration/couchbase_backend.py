@@ -101,8 +101,7 @@ class CouchbaseInterface(object):
 
         try:
             touch_result = self.registry.touch(rkey, ttl=ttl)
-            if touch_result.success is True:
-                r = make_response(200)
+            del touch_result
         except Exception:
             self.remove(rkey)
             r = make_response(500)
