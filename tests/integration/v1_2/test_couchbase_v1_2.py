@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest, pytest
+import unittest
+import pytest
 import requests
 from couchbase.cluster import Cluster, PasswordAuthenticator
 import couchbase.subdocument as subdoc
@@ -214,7 +215,6 @@ class TestCouchbase(unittest.TestCase):
         self.assertEqual(xattrs['created_at'], xattrs['last_updated'])
         self.assertLessEqual(xattrs['created_at'], lookup_time)
         self.assertGreaterEqual(xattrs['created_at'], post_time)
-
 
     @pytest.mark.skip(reason="intermittent fails, covered by same test for v1_0")
     def test_resource_update(self):
