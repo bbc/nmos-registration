@@ -27,7 +27,10 @@ from tests.helpers import doc_generator
 
 from nmosregistration.registryaggregatorservice import RegistryAggregatorService
 
-BUCKET_NAME = 'nmos-test'
+BUCKET_CONFIG = {
+    'registry': 'nmos-test',
+    'meta': 'nmos-meta-config'
+}
 TEST_USERNAME = 'nmos-test'
 TEST_PASSWORD = 'password'
 
@@ -69,7 +72,7 @@ def _initialise_cluster(host, port, bucket, username, password):
                       'port': port,
                   }
                   )
-    # Build bucket
+    # Build registry bucket
     requests.post('http://{0}:{1}/pools/default/buckets'.format(host, port),
                   auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, TEST_PASSWORD),
                   data={
@@ -78,7 +81,19 @@ def _initialise_cluster(host, port, bucket, username, password):
                       'evictionPolicy': 'valueOnly',
                       'ramQuotaMB': 1024,
                       'bucketType': 'couchbase',
-                      'name': BUCKET_NAME,
+                      'name': bucket['registry'],
+                  }
+                  )
+    # Build meta bucket
+    requests.post('http://{0}:{1}/pools/default/buckets'.format(host, port),
+                  auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, TEST_PASSWORD),
+                  data={
+                      'flushEnabled': 1,
+                      'replicaNumber': 0,
+                      'evictionPolicy': 'valueOnly',
+                      'ramQuotaMB': 128,
+                      'bucketType': 'couchbase',
+                      'name': bucket['meta'],
                   }
                   )
     # Set indexer mode
@@ -129,7 +144,7 @@ class TestCouchbase(unittest.TestCase):
         host = self.couch_container.get_service_host('couchbase', 8091)
         port = self.couch_container.get_service_port('couchbase', 8091)
 
-        _initialise_cluster(host, port, BUCKET_NAME, TEST_USERNAME, TEST_PASSWORD)
+        _initialise_cluster(host, port, BUCKET_CONFIG, TEST_USERNAME, TEST_PASSWORD)
 
         time.sleep(10)  # TODO, properly wait for setup somehow, possible long poll?
 
@@ -140,7 +155,7 @@ class TestCouchbase(unittest.TestCase):
             "port": port,
             "username": TEST_USERNAME,
             "password": TEST_PASSWORD,
-            "bucket": BUCKET_NAME
+            "buckets": BUCKET_CONFIG
         }
         self.registry.config['priority'] = 169
         self.registry.service_port = AGGREGATOR_PORT
@@ -149,11 +164,14 @@ class TestCouchbase(unittest.TestCase):
         cluster = Cluster('couchbase://{}'.format(host))
         auth = PasswordAuthenticator(TEST_USERNAME, TEST_PASSWORD)
         cluster.authenticate(auth)
-        self.test_bucket = cluster.open_bucket(BUCKET_NAME)
+        self.test_bucket = cluster.open_bucket(BUCKET_CONFIG['registry'])
         self.test_bucket_manager = self.test_bucket.bucket_manager()
+        self.test_meta_bucket = cluster.open_bucket(BUCKET_CONFIG['meta'])
+        self.test_meta_bucket_manager = self.test_bucket.bucket_manager()
 
         try:
             self.test_bucket_manager.n1ql_index_create('test-bucket-primary-index', primary=True)
+            self.test_meta_bucket_manager.n1ql_index_create('test-bucket-primary-index', primary=True)
         except couchbase.exceptions.KeyExistsError:
             pass
 

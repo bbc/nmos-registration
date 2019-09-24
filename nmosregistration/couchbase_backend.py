@@ -44,35 +44,45 @@ class CouchbaseInterface(object):
     type = 'couchbase'
     port = None
 
-    def __init__(self, cluster_address, username, password, bucket, *args, **kwargs):
+    def __init__(self, cluster_address, username, password, buckets, *args, **kwargs):
         self.cluster = Cluster('couchbase://{}'.format(','.join(cluster_address)))
         auth = PasswordAuthenticator(username, password)
         self.cluster.authenticate(auth)
-        self.registry = self.cluster.open_bucket(bucket)
-        self.bucket = bucket
+        self.buckets = {}
+        for label, bucket_name in buckets.items():
+            self.buckets[label] = {
+                'bucket': self.cluster.open_bucket(bucket_name),
+                'name': bucket_name
+            }
 
     class RegistryUnavailable(Exception):
         pass
 
-    def _get_associated_node_id(self, rtype, value):
+    def _get_associated_node_id(self, rtype, value, bucket=None):
+        if bucket is None:
+            bucket = self.buckets['registry']
         if rtype == 'node':
             return value['id']
         elif rtype == 'device':
             return value['node_id']
         elif rtype in ['receiver', 'sender', 'source', 'flow']:
             try:
-                return self.registry.get(value['device_id']).value['node_id']
+                return bucket['bucket'].get(value['device_id']).value['node_id']
             except KeyError:
-                return self.registry.get(self.registry.get(value['source_id']).value['device_id']).value['node_id']
+                return bucket['bucket'].get(bucket['bucket'].get(value['source_id']).value['device_id']).value['node_id']
 
-    def get_health(self, rkey, port=None):
-        return self.registry.lookup_in(
+    def get_health(self, rkey, bucket=None, port=None):
+        if bucket is None:
+            bucket = self.buckets['registry']
+        return bucket['bucket'].lookup_in(
             rkey, subdoc.get('$document.exptime', xattr=True)
         )['$document.exptime']
 
-    def upsert(self, rtype, rkey, value, xattrs, ttl=12):
+    def upsert(self, rtype, rkey, value, xattrs, bucket=None, ttl=12):
+        if bucket is None:
+            bucket = self.buckets['registry']
         try:
-            upsert_result = self.registry.upsert(rkey, value, ttl=ttl)
+            upsert_result = bucket['bucket'].upsert(rkey, value, ttl=ttl)
             r = make_response(json.dumps(value), 200)
         except couchbase.exceptions.KeyExistsError:
             return make_response(409)
@@ -87,7 +97,7 @@ class CouchbaseInterface(object):
 
             # Store any additional extended attributes
             for key, value in xattrs.items():
-                subdoc_results.append(self.registry.mutate_in(
+                subdoc_results.append(bucket['bucket'].mutate_in(
                     rkey,
                     subdoc.upsert(_legacy_key_lookup(key), value, xattr=True)
                 ))
@@ -100,7 +110,7 @@ class CouchbaseInterface(object):
             ttl = self.get_health(xattrs['node_id'])
 
         try:
-            touch_result = self.registry.touch(rkey, ttl=ttl)
+            touch_result = bucket['bucket'].touch(rkey, ttl=ttl)
             del touch_result
         except Exception:
             self.remove(rkey)
@@ -109,9 +119,11 @@ class CouchbaseInterface(object):
         return r
 
     # Legacy put command warps around upsert. Sanitises inputs, removing etcd specific decoration.
-    def put(self, rtype, rkey, value, ttl=12, port=None):
+    def put(self, rtype, rkey, value, bucket=None, ttl=12, port=None):
+        if bucket is None:
+            bucket = self.buckets['registry']
         try:
-            if rtype[0:-1] != self.registry.lookup_in(
+            if rtype[0:-1] != bucket['bucket'].lookup_in(
                 rkey,
                 subdoc.get('resource_type', xattr=True)
             )['resource_type']:
@@ -132,69 +144,83 @@ class CouchbaseInterface(object):
         return self.upsert(rtype[0:-1], rkey, value, xattrs, ttl=ttl)
 
     # Generalise? Contextual query based on rtype?
-    def get_node_residents(self, rkey):
+    def get_node_residents(self, rkey, bucket=None):
+        if bucket == None:
+            bucket = self.buckets['registry']
         query = couchbase.n1ql.N1QLQuery(
             "SELECT id FROM {0} WHERE meta().xattrs.node_id = '{1}'"
-            .format(self.bucket, rkey)
+            .format(bucket['name'], rkey)
         )
         residents = []
-        for resident in self.registry.n1ql_query(query):
+        for resident in bucket['bucket'].n1ql_query(query):
             residents.append(resident['id'])
 
         return residents
 
-    def get_descendents(self, rtype, rkey):
+    def get_descendents(self, rtype, rkey, bucket=None):
+        if bucket == None:
+            bucket = self.buckets['registry']
         if rtype == 'node':
             query = couchbase.n1ql.N1QLQuery(
                 "SELECT id from `{0}` WHERE meta().xattrs.node_id = '{1}'"
-                .format(self.bucket, rkey)
+                .format(bucket['name'], rkey)
             )
         else:
             query = couchbase.n1ql.N1QLQuery(
                 "SELECT id FROM `{0}` WHERE `{1}_id` = '{2}'"
-                .format(self.bucket, rtype, rkey)
+                .format(bucket['name'], rtype, rkey)
             )
 
         descendents = []
         try:
-            for descendent in self.registry.n1ql_query(query):
+            for descendent in bucket['bucket'].n1ql_query(query):
                 descendents.append(descendent['id'])
         except couchbase.n1ql.N1QLError:
             return []
         return descendents
 
     # TODO: Strip useless legacy resource_type nonsense? Validate returned doc is correct type??
-    def get(self, resource_type, rkey, port=None):
-        return self.registry.get(rkey).value
+    def get(self, resource_type, rkey, bucket=None, port=None):
+        if bucket is None:
+            bucket = self.buckets['registry']
+        return bucket['bucket'].get(rkey).value
 
-    def resource_exists(self, resource_type, rkey):
+    def resource_exists(self, resource_type, rkey, bucket=None):
+        if bucket is None:
+            bucket = self.buckets['registry']
         try:
             self.get(resource_type, rkey)
-            actual_type = self.registry.lookup_in(rkey, subdoc.get('resource_type', xattr=True))
+            actual_type = bucket['bucket'].lookup_in(rkey, subdoc.get('resource_type', xattr=True))
         except couchbase.exceptions.NotFoundError:
             return False
         return actual_type['resource_type'] == resource_type[0:-1]
 
-    def touch(self, rkey, ttl=12):
-        return self.registry.touch(rkey, ttl=ttl)
+    def touch(self, rkey, bucket=None, ttl=12):
+        if bucket is None:
+            bucket = self.buckets['registry']
+        return bucket['bucket'].touch(rkey, ttl=ttl) #FIXME
 
     def put_health(self, rkey, value, ttl=12, port=None):
         for descendent in self.get_descendents('node', rkey):
             self.touch(descendent, ttl=ttl)
-        if self.touch(rkey, ttl).success is True:
+        if self.touch(rkey, ttl=ttl).success is True:
             return make_response(json.dumps({'health': value}), 200)
 
-    def remove(self, rkey):
+    def remove(self, rkey, bucket=None):
+        if bucket is None:
+            bucket = self.buckets['registry']
         r = Response()
         try:
-            self.registry.remove(rkey)
+            bucket['bucket'].remove(rkey)
             r.status_code = 204
         except couchbase.exceptions.NotFoundError:
             r.status_code = 404
             r.reason = 'Key does not exist in registry'
         return r
 
-    def delete(self, resource_type, rkey, port=None):
+    def delete(self, resource_type, rkey, bucket=None, port=None):
+        if bucket is None:
+            bucket = self.buckets['registry']
         r = Response()
         descendents = self.get_descendents(resource_type, rkey)
 
@@ -205,5 +231,5 @@ class CouchbaseInterface(object):
             r.status_code = 204
         except couchbase.exceptions.NotFoundError:
             r.status_code = 404
-            r.reason = '{} not found in {} bucket'.format(rkey, self.bucket)
+            r.reason = '{} not found in {} bucket'.format(rkey, bucket['name'])
         return r

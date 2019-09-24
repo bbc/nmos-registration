@@ -9,7 +9,10 @@
         "port": 8091,
         "username": "",
         "password": "",
-        "bucket": ""
+        "buckets": {
+            "registry": "",
+            "meta": ""
+        }
     },
     "resource_expiry": 12
 }

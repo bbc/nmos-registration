@@ -95,6 +95,7 @@ class RoutesCommon(object):
                     resource_type_plural,
                     resource_id,
                     json.dumps(resource_data),
+                    self.registry.buckets['registry'],
                     port=self.registry.port,
                     ttl=self.resource_expiry
                 )
