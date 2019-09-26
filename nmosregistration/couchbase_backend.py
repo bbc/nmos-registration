@@ -30,6 +30,7 @@ legacy_key_table = {
     '@_apiversion': 'api_version'
 }
 
+WS_PERIOD = 30
 
 def _legacy_key_lookup(key):
     try:
@@ -54,6 +55,7 @@ class CouchbaseInterface(object):
                 'bucket': self.cluster.open_bucket(bucket_name),
                 'name': bucket_name
             }
+        self.ws_period = WS_PERIOD # TODO: This should be defined by a param in the config file
 
     class RegistryUnavailable(Exception):
         pass
@@ -126,6 +128,8 @@ class CouchbaseInterface(object):
     def put(self, rtype, rkey, value, bucket=None, ttl=12, ws_period=None, port=None):
         if bucket is None:
             bucket = self.buckets['registry']
+        if ws_period is None:
+            ws_period = self.ws_period
 
         xattrs = {}
 
@@ -228,16 +232,27 @@ class CouchbaseInterface(object):
             r.reason = 'Key does not exist in registry'
         return r
 
+    def _delete_meta(self, rkey, ttl, last_updated, bucket):
+        bucket['bucket'].mutate_in(
+            rkey,
+            subdoc.upsert('last_updated', last_updated, xattr=True)
+        )
+        return bucket['bucket'].touch(rkey, ttl=ttl)
+
     def delete(self, resource_type, rkey, bucket=None, meta_bucket=None, port=None):
         if bucket is None:
             bucket = self.buckets['registry']
+        if meta_bucket is None:
+            meta_bucket = self.buckets['meta']
         r = Response()
         descendents = self.get_descendents(resource_type, rkey)
 
         try:
             for descendent in descendents:
                 self.remove(descendent)
+                self._delete_meta(descendent, self.ws_period, Timestamp.get_time().to_nanosec(), meta_bucket)
             self.remove(rkey)
+            self._delete_meta(rkey, self.ws_period, Timestamp.get_time().to_nanosec(), meta_bucket)
             r.status_code = 204
         except couchbase.exceptions.NotFoundError:
             r.status_code = 404

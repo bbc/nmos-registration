@@ -38,6 +38,8 @@ AGGREGATOR_PORT = 8235
 
 API_VERSION = 'v1.2'
 
+WS_PERIOD = 30
+
 
 def _initialise_cluster(host, port, bucket, username, password):
     # Initialize node
@@ -294,6 +296,52 @@ class TestCouchbase(unittest.TestCase):
         with self.assertRaises(couchbase.exceptions.NotFoundError):
             self.test_bucket.get(doc_body['id'])
 
+    def test_node_expiry_meta(self):
+        """Ensure expired nodes retain appropriate meta document for websocket purposes"""
+        doc_body = util.json_fixture("fixtures/node.json")
+        request_payload = {
+            'type': 'node',
+            'data': doc_body
+        }
+
+        requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/{}/resource'.format(AGGREGATOR_PORT, API_VERSION),
+            json=request_payload
+        )
+
+        time.sleep(13)
+
+        # with self.assertRaises(couchbase.exceptions.NotFoundError):
+        meta_doc = self.test_meta_bucket.get(doc_body['id'])
+        self.assertDictEqual(meta_doc.value, doc_body)
+
+    def test_node_expiry_meta_xattrs(self):
+        """Ensure expired nodes meta doc extended attributes are correct"""
+        doc_body = util.json_fixture("fixtures/node.json")
+        request_payload = {
+            'type': 'node',
+            'data': doc_body
+        }
+
+        requests.post(
+            'http://0.0.0.0:{}/x-nmos/registration/{}/resource'.format(AGGREGATOR_PORT, API_VERSION),
+            json=request_payload
+        )
+
+        initial_time = Timestamp.get_time()
+        time.sleep(12)
+        current_time = Timestamp.get_time()
+
+        xattrs = _get_xattrs(
+            self.test_meta_bucket,
+            doc_body['id'],
+            ['last_updated', 'created_at', '$document.exptime']
+        )
+
+        self.assertNotEqual(xattrs['last_updated'], xattrs['created_at'])
+        self.assertLess(abs(int(xattrs['last_updated']) - int(current_time.to_nanosec())), Timestamp(sec=13).to_nanosec())
+        self.assertLess(abs(int(xattrs['$document.exptime']) - (int(float(initial_time.to_sec_frac())))), 8)
+
     def test_device_expiry_with_node(self):
         """Ensure devices expire at the same time as parent nodes after registration
         if no further heartbeats are received
@@ -426,6 +474,7 @@ class TestCouchbase(unittest.TestCase):
         test_node = doc_generator.generate_node()
 
         _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'})
+        _put_doc(self.test_meta_bucket, test_node['id'], test_node, {'resource_type': 'node'})
         self.assertDictEqual(self.test_bucket.get(test_node['id']).value, test_node)
 
         aggregator_response = requests.delete(
