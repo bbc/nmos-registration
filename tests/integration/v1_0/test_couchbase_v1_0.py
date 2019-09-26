@@ -134,7 +134,6 @@ def _get_xattrs(bucket, key, xattrs):
             results[xkey] = None
     return results
 
-@pytest.mark.skip()
 class TestCouchbase(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -449,6 +448,22 @@ class TestCouchbase(unittest.TestCase):
             ttl=0
         )
 
+        _put_doc(self.test_meta_bucket, test_node['id'], test_node, {'resource_type': 'node'}, ttl=0)
+        _put_doc(
+            self.test_meta_bucket,
+            test_device['id'],
+            test_device,
+            {'resource_type': 'device', 'node_id': test_device['node_id']},
+            ttl=0
+        )
+        _put_doc(
+            self.test_meta_bucket,
+            test_source['id'],
+            test_source,
+            {'resource_type': 'source', 'node_id': test_device['node_id']},
+            ttl=0
+        )
+
         request_payload = {
             'type': 'flow',
             'data': test_flow
@@ -469,6 +484,7 @@ class TestCouchbase(unittest.TestCase):
         test_node = doc_generator.generate_node()
 
         _put_doc(self.test_bucket, test_node['id'], test_node, {'resource_type': 'node'})
+        _put_doc(self.test_meta_bucket, test_node['id'], test_node, {'resource_type': 'node'})
         self.assertDictEqual(self.test_bucket.get(test_node['id']).value, test_node)
 
         aggregator_response = requests.delete(
@@ -497,6 +513,14 @@ class TestCouchbase(unittest.TestCase):
             'resource_type': 'node', 'node_id': test_device['node_id']
         })
         _put_doc(self.test_bucket, test_source['id'], test_source, {
+            'resource_type': 'node', 'node_id': test_device['node_id']
+        })
+
+        _put_doc(self.test_meta_bucket, test_node['id'], test_node, {'resource_type': 'node'})
+        _put_doc(self.test_meta_bucket, test_device['id'], test_device, {
+            'resource_type': 'node', 'node_id': test_device['node_id']
+        })
+        _put_doc(self.test_meta_bucket, test_source['id'], test_source, {
             'resource_type': 'node', 'node_id': test_device['node_id']
         })
 
