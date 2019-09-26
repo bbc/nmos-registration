@@ -46,6 +46,8 @@ clean:
 	rm -rf $(topbuilddir)/dist
 	rm -rf $(topbuilddir)/deb_dist
 	rm -rf $(topbuilddir)/*.egg-info
+	rm -rf $(topbuilddir)/.vagrant
+	rm -rf $(topbuilddir)/.pytest_cache
 	find $(topbuilddir) -name '*.pyc' -delete
 	find $(topbuilddir) -name '*.py,cover' -delete
 
