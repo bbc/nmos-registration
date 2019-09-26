@@ -506,6 +506,14 @@ class TestCouchbase(unittest.TestCase):
             'resource_type': 'node', 'node_id': test_device['node_id']
         })
 
+        _put_doc(self.test_meta_bucket, test_node['id'], test_node, {'resource_type': 'node'})
+        _put_doc(self.test_meta_bucket, test_device['id'], test_device, {
+            'resource_type': 'node', 'node_id': test_device['node_id']
+        })
+        _put_doc(self.test_meta_bucket, test_source['id'], test_source, {
+            'resource_type': 'node', 'node_id': test_device['node_id']
+        })
+
         requests.delete(
             'http://0.0.0.0:{}/x-nmos/registration/{}/resource/node/{}'.format(
                 AGGREGATOR_PORT,
