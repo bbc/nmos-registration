@@ -90,13 +90,17 @@ class CouchbaseInterface(object):
             write_time = Timestamp.get_time().to_nanosec()
             subdoc_results = []
 
-            xattrs['last_updated'] = write_time
-            xattrs['created_at'] = write_time
-            xattrs['resource_type'] = rtype
-            xattrs['node_id'] = self._get_associated_node_id(rtype, value)
+            actual_xattrs = {}
+            actual_xattrs['last_updated'] = write_time
+            actual_xattrs['created_at'] = write_time
+            actual_xattrs['resource_type'] = rtype
+            actual_xattrs['node_id'] = self._get_associated_node_id(rtype, value)
 
-            # Store any additional extended attributes
             for key, value in xattrs.items():
+                actual_xattrs[key] = value
+
+            # Store extended attributes
+            for key, value in actual_xattrs.items():
                 subdoc_results.append(bucket['bucket'].mutate_in(
                     rkey,
                     subdoc.upsert(_legacy_key_lookup(key), value, xattr=True)
@@ -107,7 +111,7 @@ class CouchbaseInterface(object):
                 return failed_subdoc_ops
 
         if rtype != 'node':
-            ttl = self.get_health(xattrs['node_id'])
+            ttl = self.get_health(actual_xattrs['node_id'])
 
         try:
             touch_result = bucket['bucket'].touch(rkey, ttl=ttl)
@@ -116,12 +120,15 @@ class CouchbaseInterface(object):
             self.remove(rkey)
             r = make_response(500)
 
-        return r
+        return r, actual_xattrs
 
     # Legacy put command warps around upsert. Sanitises inputs, removing etcd specific decoration.
-    def put(self, rtype, rkey, value, bucket=None, ttl=12, port=None):
+    def put(self, rtype, rkey, value, bucket=None, ttl=12, ws_period=None, port=None):
         if bucket is None:
             bucket = self.buckets['registry']
+
+        xattrs = {}
+
         try:
             if rtype[0:-1] != bucket['bucket'].lookup_in(
                 rkey,
@@ -132,16 +139,19 @@ class CouchbaseInterface(object):
             pass
         except couchbase.exceptions.NotFoundError:
             pass
+
         # Remove extra-spec fields and add to dict of additional extended attributes
         value = json.loads(value)
         xattr_keys = [key for key in value.keys() if key[0] == '@']
-        xattrs = {}
         for key in xattr_keys:
             xattrs[key] = value[key]
             del value[key]
 
-        # rtype[0:-1] naïvely strips the final character
-        return self.upsert(rtype[0:-1], rkey, value, xattrs, ttl=ttl)
+        # rtype[0:-1] naïvely strips the final character TODO: replace with lookup
+        reg_response, xattrs = self.upsert(rtype[0:-1], rkey, value, xattrs, ttl=ttl)
+        xattrs['last_updated'] = xattrs['last_updated'] + ttl
+        meta_response = self.upsert(rtype[0:-1], rkey, value, xattrs, ttl=ttl+ws_period, bucket=self.buckets['meta'])
+        return reg_response
 
     # Generalise? Contextual query based on rtype?
     def get_node_residents(self, rkey, bucket=None):
@@ -218,7 +228,7 @@ class CouchbaseInterface(object):
             r.reason = 'Key does not exist in registry'
         return r
 
-    def delete(self, resource_type, rkey, bucket=None, port=None):
+    def delete(self, resource_type, rkey, bucket=None, meta_bucket=None, port=None):
         if bucket is None:
             bucket = self.buckets['registry']
         r = Response()

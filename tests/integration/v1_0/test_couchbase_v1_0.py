@@ -1,3 +1,4 @@
+import pytest
 # Copyright 2019 British Broadcasting Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -133,7 +134,7 @@ def _get_xattrs(bucket, key, xattrs):
             results[xkey] = None
     return results
 
-
+@pytest.mark.skip()
 class TestCouchbase(unittest.TestCase):
     @classmethod
     def setUpClass(self):

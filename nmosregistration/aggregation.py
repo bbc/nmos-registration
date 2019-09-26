@@ -45,7 +45,7 @@ class AggregatorAPI(WebAPI):
                 cluster_address=config['registry']['hosts'],
                 username=config['registry']['username'],
                 password=config['registry']['password'],
-                bucket=config['registry']['bucket'],
+                buckets=config['registry']['buckets'],
             )
         else:
             registry = EtcdInterface()

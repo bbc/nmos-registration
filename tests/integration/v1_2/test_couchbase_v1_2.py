@@ -174,6 +174,8 @@ class TestCouchbase(unittest.TestCase):
         except couchbase.exceptions.KeyExistsError:
             pass
 
+        time.sleep(5)
+
     def test_document_write(self):
         doc_body = util.json_fixture("fixtures/node.json")
         request_payload = {
