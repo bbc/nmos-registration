@@ -123,8 +123,8 @@ class RegistryAggregatorService(object):
         print("Stopped main()")
 
     def stop(self):
-        self.running = False
         self._cleanup()
+        self.running = False
 
     def sig_handler(self):
         print("Pressed ctrl+c")

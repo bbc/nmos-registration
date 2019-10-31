@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.7.10
+- Clean-up before stopping service thread
+
 ## 0.7.9
 - Add `api_auth` text record to multicast announcements
 
