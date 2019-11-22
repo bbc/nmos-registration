@@ -28,7 +28,7 @@ from ..config import config
 OAUTH_MODE = config.get('oauth_mode', False)
 
 VALID_TYPES = ['node', 'source', 'flow', 'device', "receiver", "sender"]
-REGISTRY_PORT = 4001
+REGISTRY_PORT = 2379
 NODE_SEEN_TTL = 12  # seconds until a node considered "dead".
 
 
