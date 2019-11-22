@@ -37,7 +37,7 @@ class MyTimeout(TimeoutSauce):
 requests.adapters.TimeoutSauce = MyTimeout
 
 
-def _prune_empty_branches(key, port=4001):
+def _prune_empty_branches(key, port=2379):
     """
     Given KEY, delete any empty "dir" nodes.
     e.g. if key = a/b/c/d, delete c, b, and a if they are empty "dirs".
@@ -62,7 +62,7 @@ class EtcdInterface(object):
 
     # TODO: there is a lot of generality in the below...
 
-    def put(self, rtype, rkey, value, ttl=None, port=4001):
+    def put(self, rtype, rkey, value, ttl=None, port=2379):
         assert(rtype.endswith('s'))   # ensure that type is pluralised
         data = {"value": value}
         if ttl:
@@ -75,7 +75,7 @@ class EtcdInterface(object):
             raise self.RegistryUnavailable
         return r
 
-    def delete(self, rtype, rkey, port=4001):
+    def delete(self, rtype, rkey, port=2379):
         assert(rtype.endswith('s'))   # ensure that type is pluralised
         url = "http://localhost:{}/v2/keys/resource/{}/{}?recursive=true".format(port, rtype, rkey)
         try:
@@ -84,7 +84,7 @@ class EtcdInterface(object):
             raise self.RegistryUnavailable
         return r
 
-    def getresources(self, rtype, port=4001):
+    def getresources(self, rtype, port=2379):
         assert(rtype.endswith('s'))   # ensure that type is pluralised
         url = "http://localhost:{}/v2/keys/resource/{}".format(port, rtype)
         try:
@@ -94,7 +94,7 @@ class EtcdInterface(object):
             raise self.RegistryUnavailable
         return keys
 
-    def get(self, rtype, rkey, port=4001):
+    def get(self, rtype, rkey, port=2379):
         assert(rtype.endswith('s'))   # ensure that type is pluralised
         url = "http://localhost:{}/v2/keys/resource/{}/{}?recursive=true".format(port, rtype, rkey)
         try:
@@ -106,7 +106,7 @@ class EtcdInterface(object):
         else:
             return json.loads(r)
 
-    def get_all(self, rtype, port=4001):
+    def get_all(self, rtype, port=2379):
         try:
             assert(rtype.endswith('s'))   # ensure that type is pluralised
             url = "http://localhost:{}/v2/keys/resource/{}/?recursive=true".format(port, rtype)
@@ -119,7 +119,7 @@ class EtcdInterface(object):
 
     # Health
 
-    def put_health(self, rkey, value, ttl=None, port=4001):
+    def put_health(self, rkey, value, ttl=None, port=2379):
         data = {"value": value}
         if ttl:
             data['ttl'] = ttl
@@ -131,7 +131,7 @@ class EtcdInterface(object):
             raise self.RegistryUnavailable
         return r
 
-    def get_healths(self, port=4001):
+    def get_healths(self, port=2379):
         url = "http://localhost:{}/v2/keys/health/?recursive=true".format(port)
         try:
             r = requests.get(url, proxies={'http': ''})
@@ -139,7 +139,7 @@ class EtcdInterface(object):
         except (requests.ConnectionError, requests.HTTPError, requests.Timeout):
             raise self.RegistryUnavailable
 
-    def get_health(self, rkey, port=4001):
+    def get_health(self, rkey, port=2379):
         url = "http://localhost:{}/v2/keys/health/{}/?recursive=true".format(port, rkey)
         try:
             r = requests.get(url, proxies={'http': ''})
@@ -150,7 +150,7 @@ class EtcdInterface(object):
             return None
         return r.json().get("node", {}).get("value", None)
 
-    def put_garbage_collection_flag(self, host, ttl, port=4001):
+    def put_garbage_collection_flag(self, host, ttl, port=2379):
         # See https://github.com/coreos/etcd/blob/master/Documentation/api.md#atomic-compare-and-swap
         url = "http://127.0.0.1:{}/v2/keys/garbage_collection?prevExist=false".format(port)
         data = "value={}&ttl={}".format(host, ttl)
@@ -158,7 +158,7 @@ class EtcdInterface(object):
         return requests.put(url, data=data, headers=headers)
 
     # TODO: a lot could be re-cast to use this
-    def put_raw(self, rkey, value, ttl=None, port=4001):
+    def put_raw(self, rkey, value, ttl=None, port=2379):
         data = {"value": value}
         if ttl:
             data['ttl'] = ttl
@@ -170,7 +170,7 @@ class EtcdInterface(object):
             raise self.RegistryUnavailable
         return r
 
-    def delete_raw(self, rkey, port=4001):
+    def delete_raw(self, rkey, port=2379):
         url = "http://localhost:{}/v2/keys/{}?recursive=true".format(port, rkey)
         try:
             r = requests.delete(url, proxies={'http': ''})
@@ -182,14 +182,14 @@ class EtcdInterface(object):
 
         return r
 
-    def get_raw(self, rkey, recurse=True, port=4001):
+    def get_raw(self, rkey, recurse=True, port=2379):
         url = "http://localhost:{}/v2/keys/{}?recursive={}".format(port, rkey, "true" if recurse else "false")
         try:
             return requests.get(url, proxies={'http': ''})
         except (requests.ConnectionError, requests.HTTPError, requests.Timeout):
             raise self.RegistryUnavailable
 
-    def resource_exists(self, resource_type, resource_id, port=4001):
+    def resource_exists(self, resource_type, resource_id, port=2379):
         """Test if a resource exists in the datastore"""
         url = "http://localhost:{}/v2/keys/resource/{}/{}".format(port, resource_type, resource_id)
         try:

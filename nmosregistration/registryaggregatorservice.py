@@ -40,7 +40,7 @@ DNS_SD_HTTPS_PORT = 443
 DNS_SD_NAME = 'registration_' + str(HOST)
 DNS_SD_TYPE = '_nmos-register._tcp'
 DNS_SD_LEGACY_TYPE = '_nmos-registration._tcp'
-REGISTRY_PORT = 4001
+REGISTRY_PORT = 2379
 
 
 class RegistryAggregatorService(object):

@@ -21,7 +21,7 @@ from nmosregistration.v1_0 import routes as v1_0
 from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Response
 
-REGISTRY_PORT = 4001
+REGISTRY_PORT = 2379
 
 
 class MockLogger():
@@ -117,7 +117,7 @@ class TestAggregatorAPI(unittest.TestCase):
             (
                 'put_health',
                 (key, int(time.time())),
-                {'port': 4001, 'ttl': 12}
+                {'port': 2379, 'ttl': 12}
             )
         ]
         self.assertEqual(len(expected), len(self.mock_registry.invocations))
@@ -151,7 +151,7 @@ class TestAggregatorAPI(unittest.TestCase):
         #     (
         #         'put_health',
         #         (key.lower(), int(time.time())),
-        #         {'port': 4001, 'ttl': 12}
+        #         {'port': 2379, 'ttl': 12}
         #     )
         # ]
         # Check key in PUT is lowercase
