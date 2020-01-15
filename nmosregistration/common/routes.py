@@ -179,7 +179,7 @@ class RoutesCommon(object):
         if request.method == 'POST':
             req_data = request.get_data()
             if type(req_data) is not str:
-                req_data = req_data.decode('ascii')
+                req_data = req_data.decode('utf-8')
             r = self._add_resource(req_data)
             if r.status_code // 100 == 2:
                 representation = json.loads(r.json()["node"]["value"])
