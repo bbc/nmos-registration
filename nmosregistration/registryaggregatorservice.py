@@ -18,7 +18,8 @@ monkey.patch_all()
 
 from nmoscommon.mdns import MDNSEngine # noqa E402
 from nmoscommon.utils import getLocalIP # noqa E402
-from nmosregistration.aggregation import AggregatorAPI, AGGREGATOR_APIVERSIONS # noqa E402
+from .aggregation import AggregatorAPI # noqa E402
+from .common.routes import AGGREGATOR_APIVERSIONS # noqa E402
 from nmoscommon.httpserver import HttpServer # noqa E402
 from nmoscommon.logger import Logger # noqa E402
 from .config import config # noqa E402

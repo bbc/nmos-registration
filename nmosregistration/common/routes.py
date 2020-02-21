@@ -31,6 +31,12 @@ VALID_TYPES = ['node', 'source', 'flow', 'device', "receiver", "sender"]
 REGISTRY_PORT = 4001
 NODE_SEEN_TTL = 12  # seconds until a node considered "dead".
 
+AGGREGATOR_APINAMESPACE = "x-nmos"
+AGGREGATOR_APINAME = "registration"
+AGGREGATOR_APIVERSIONS = ["v1.0", "v1.1", "v1.2", "v1.3"]
+if config.get("https_mode", "disabled") == "enabled":
+    AGGREGATOR_APIVERSIONS.remove("v1.0")
+
 
 class RoutesCommon(object):
 
@@ -174,7 +180,7 @@ class RoutesCommon(object):
         return ['resource/', 'health/']
 
     @route('/resource', methods=['GET', 'POST'], auto_json=False)
-    @RequiresAuth(condition=OAUTH_MODE)
+    @RequiresAuth(condition=OAUTH_MODE, api_name=AGGREGATOR_APINAME)
     def __resource(self):
         if request.method == 'POST':
             req_data = request.get_data()
@@ -208,7 +214,7 @@ class RoutesCommon(object):
         return r
 
     @route('/resource/<resource_type>/<rname>', methods=['GET', 'DELETE'])
-    @RequiresAuth(condition=OAUTH_MODE)
+    @RequiresAuth(condition=OAUTH_MODE, api_name=AGGREGATOR_APINAME)
     def __resource_type_name(self, resource_type, rname):
         if request.method == 'DELETE':
             r = self._delete(resource_type, rname)
@@ -235,7 +241,7 @@ class RoutesCommon(object):
         return self.registry.getresources('nodes')
 
     @route('/health/nodes/<k>', methods=['GET', 'POST'])
-    @RequiresAuth(condition=OAUTH_MODE)
+    @RequiresAuth(condition=OAUTH_MODE, api_name=AGGREGATOR_APINAME)
     def __health_type_name(self, k):
         if request.method == 'POST':
             r = self._health(k)
