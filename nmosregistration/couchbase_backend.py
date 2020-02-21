@@ -32,6 +32,7 @@ legacy_key_table = {
 
 WS_PERIOD = 30
 
+
 def _legacy_key_lookup(key):
     try:
         return legacy_key_table[key]
@@ -55,7 +56,7 @@ class CouchbaseInterface(object):
                 'bucket': self.cluster.open_bucket(bucket_name),
                 'name': bucket_name
             }
-        self.ws_period = WS_PERIOD # TODO: This should be defined by a param in the config file
+        self.ws_period = WS_PERIOD  # TODO: This should be defined by a param in the config file
 
     class RegistryUnavailable(Exception):
         pass
@@ -71,7 +72,9 @@ class CouchbaseInterface(object):
             try:
                 return bucket['bucket'].get(value['device_id']).value['node_id']
             except KeyError:
-                return bucket['bucket'].get(bucket['bucket'].get(value['source_id']).value['device_id']).value['node_id']
+                return bucket['bucket'].get(
+                    bucket['bucket'].get(
+                        value['source_id']).value['device_id']).value['node_id']
 
     def get_health(self, rkey, bucket=None, port=None):
         if bucket is None:
@@ -154,12 +157,12 @@ class CouchbaseInterface(object):
         # rtype[0:-1] naïvely strips the final character TODO: replace with lookup
         reg_response, xattrs = self.upsert(rtype[0:-1], rkey, value, xattrs, ttl=ttl)
         xattrs['last_updated'] = xattrs['last_updated'] + ttl
-        meta_response = self.upsert(rtype[0:-1], rkey, value, xattrs, ttl=ttl+ws_period, bucket=self.buckets['meta'])
+        self.upsert(rtype[0:-1], rkey, value, xattrs, ttl=ttl + ws_period, bucket=self.buckets['meta'])
         return reg_response
 
     # Generalise? Contextual query based on rtype?
     def get_node_residents(self, rkey, bucket=None):
-        if bucket == None:
+        if bucket is None:
             bucket = self.buckets['registry']
         query = couchbase.n1ql.N1QLQuery(
             "SELECT id FROM {0} WHERE meta().xattrs.node_id = '{1}'"
@@ -172,7 +175,7 @@ class CouchbaseInterface(object):
         return residents
 
     def get_descendents(self, rtype, rkey, bucket=None):
-        if bucket == None:
+        if bucket is None:
             bucket = self.buckets['registry']
         if rtype == 'node':
             query = couchbase.n1ql.N1QLQuery(
@@ -212,7 +215,7 @@ class CouchbaseInterface(object):
     def touch(self, rkey, bucket=None, ttl=12):
         if bucket is None:
             bucket = self.buckets['registry']
-        return bucket['bucket'].touch(rkey, ttl=ttl) #FIXME
+        return bucket['bucket'].touch(rkey, ttl=ttl)  # FIXME
 
     def put_health(self, rkey, value, ttl=12, port=None):
         for descendent in self.get_descendents('node', rkey):

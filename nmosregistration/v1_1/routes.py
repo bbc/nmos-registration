@@ -18,4 +18,4 @@ from nmosregistration.v1_1 import schema
 
 class Routes(RoutesCommon):
     def __init__(self, logger, registry, resource_expiry=None):
-        super(Routes, self).__init__(logger, registry, "v1.1", schema, resource_expiry=None)
+        super(Routes, self).__init__(logger, registry, "v1.1", schema, resource_expiry)
