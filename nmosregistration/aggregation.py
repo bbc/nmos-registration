@@ -16,25 +16,18 @@ from __future__ import absolute_import
 
 from nmoscommon.utils import getLocalIP
 from nmoscommon.webapi import WebAPI, route
+
+from .garbage import GarbageCollect
 from .etcd_backend import EtcdInterface
 from .couchbase_backend import CouchbaseInterface
-from nmosregistration.garbage import GarbageCollect
+from .common.routes import AGGREGATOR_APINAMESPACE, AGGREGATOR_APINAME, AGGREGATOR_APIVERSIONS
 
-from nmosregistration.v1_0 import routes as v1_0
-from nmosregistration.v1_1 import routes as v1_1
-from nmosregistration.v1_2 import routes as v1_2
-from nmosregistration.v1_3 import routes as v1_3
-
-from nmoscommon.nmoscommonconfig import config as _config
+from .v1_0 import routes as v1_0
+from .v1_1 import routes as v1_1
+from .v1_2 import routes as v1_2
+from .v1_3 import routes as v1_3
 
 HOST = getLocalIP()
-SERVICE_PORT = 8235
-
-AGGREGATOR_APINAMESPACE = "x-nmos"
-AGGREGATOR_APINAME = "registration"
-AGGREGATOR_APIVERSIONS = ["v1.0", "v1.1", "v1.2", "v1.3"]
-if _config.get("https_mode", "disabled") == "enabled":
-    AGGREGATOR_APIVERSIONS.remove("v1.0")
 
 
 class AggregatorAPI(WebAPI):
