@@ -24,7 +24,7 @@ pipeline {
     parameters {
         booleanParam(name: "FORCE_PYUPLOAD", defaultValue: false, description: "Force Python artifact upload")
         booleanParam(name: "FORCE_DEBUPLOAD", defaultValue: false, description: "Force Debian package upload")
-        booleanParam(name: "DESTROY_VAGRANT", defaultValue: false, description: "Destroy Vagrant box before build?")
+        booleanParam(name: "DESTROY_VAGRANT", defaultValue: true, description: "Destroy Vagrant box before build?")
     }
     triggers {
         upstream (upstreamProjects: "apmm-repos/nmos-common/master")
@@ -54,7 +54,7 @@ pipeline {
             steps{
                 sh 'vagrant ssh -c "sudo gpasswd -a vagrant docker"'
                 sh 'vagrant halt && vagrant up' // Should investigate further, but a restart is required for docker to pull image
-                sh 'vagrant ssh -c "cd /vagrant-root/ && make clean"'
+                sh 'vagrant ssh -c "cd /vagrant && make clean"'
             }
         }
         stage ("Tests") {
@@ -85,7 +85,7 @@ pipeline {
                                     env.py3_result = "FAILURE"
                                 }
                                 bbcGithubNotify(context: "tests/py3", status: "PENDING")
-                                sh 'vagrant ssh -c "cd /vagrant-root/ && make test"'
+                                sh 'vagrant ssh -c "cd /vagrant && make test"'
                                 script {
                                     env.py3_result = "SUCCESS" // This will only run if the sh above succeeded
                                 }

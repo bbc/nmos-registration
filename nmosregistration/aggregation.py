@@ -41,6 +41,7 @@ class AggregatorAPI(WebAPI):
 
     def __init__(self, logger, config):
         if config['registry']['type'] == 'couchbase':
+            print(config)
             registry = CouchbaseInterface(
                 cluster_address=config['registry']['hosts'],
                 username=config['registry']['username'],
