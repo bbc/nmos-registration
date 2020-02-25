@@ -1,4 +1,3 @@
-import pytest
 # Copyright 2019 British Broadcasting Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,71 +41,78 @@ API_VERSION = 'v1.0'
 
 def _initialise_cluster(host, port, bucket, username, password):
     # Initialize node
-    requests.post('http://{0}:{1}/nodes/self/controller/settings'.format(host, port),
-                  auth=('Administrator', 'password'),
-                  data={
-                      'path': '/opt/couchbase/var/lib/couchbase/data',
-                      'index_path': '/opt/couchbase/var/lib/couchbase/data',
-                      'cbas_path': '/opt/couchbase/var/lib/couchbase/data',
-                  }
-                  )
+    requests.post(
+        'http://{0}:{1}/nodes/self/controller/settings'.format(host, port),
+        auth=('Administrator', 'password'),
+        data={
+            'path': '/opt/couchbase/var/lib/couchbase/data',
+            'index_path': '/opt/couchbase/var/lib/couchbase/data',
+            'cbas_path': '/opt/couchbase/var/lib/couchbase/data',
+        }
+    )
     # Rename node
-    requests.post('http://{0}:{1}/node/controller/rename'.format(host, port),
-                  auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
-                  data={
-                      'hostname': '127.0.0.1',
-                  }
-                  )
+    requests.post(
+        'http://{0}:{1}/node/controller/rename'.format(host, port),
+        auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
+        data={
+            'hostname': '127.0.0.1',
+        }
+    )
     # Setup services
-    requests.post('http://{0}:{1}/node/controller/setupServices'.format(host, port),
-                  auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
-                  data={
-                      'services': 'kv,index,n1ql,fts',
-                  }
-                  )
+    requests.post(
+        'http://{0}:{1}/node/controller/setupServices'.format(host, port),
+        auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
+        data={
+            'services': 'kv,index,n1ql,fts',
+        }
+    )
     # Setup admin username/password
-    requests.post('http://{0}:{1}/settings/web'.format(host, port),
-                  auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
-                  data={
-                      'password': TEST_PASSWORD,
-                      'username': TEST_USERNAME,
-                      'port': port,
-                  }
-                  )
+    requests.post(
+        'http://{0}:{1}/settings/web'.format(host, port),
+        auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
+        data={
+            'password': TEST_PASSWORD,
+            'username': TEST_USERNAME,
+            'port': port,
+        }
+    )
     # Build registry bucket
-    requests.post('http://{0}:{1}/pools/default/buckets'.format(host, port),
-                  auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, TEST_PASSWORD),
-                  data={
-                      'flushEnabled': 1,
-                      'replicaNumber': 0,
-                      'evictionPolicy': 'valueOnly',
-                      'ramQuotaMB': 1024,
-                      'bucketType': 'couchbase',
-                      'name': bucket['registry'],
-                  }
-                  )
+    requests.post(
+        'http://{0}:{1}/pools/default/buckets'.format(host, port),
+        auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, TEST_PASSWORD),
+        data={
+            'flushEnabled': 1,
+            'replicaNumber': 0,
+            'evictionPolicy': 'valueOnly',
+            'ramQuotaMB': 1024,
+            'bucketType': 'couchbase',
+            'name': bucket['registry'],
+        }
+    )
     # Build meta bucket
-    requests.post('http://{0}:{1}/pools/default/buckets'.format(host, port),
-                  auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, TEST_PASSWORD),
-                  data={
-                      'flushEnabled': 1,
-                      'replicaNumber': 0,
-                      'evictionPolicy': 'valueOnly',
-                      'ramQuotaMB': 128,
-                      'bucketType': 'couchbase',
-                      'name': bucket['meta'],
-                  }
-                  )
+    requests.post(
+        'http://{0}:{1}/pools/default/buckets'.format(host, port),
+        auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, TEST_PASSWORD),
+        data={
+            'flushEnabled': 1,
+            'replicaNumber': 0,
+            'evictionPolicy': 'valueOnly',
+            'ramQuotaMB': 128,
+            'bucketType': 'couchbase',
+            'name': bucket['meta'],
+        }
+    )
     # Set indexer mode
-    requests.post('http://{0}:{1}/settings/indexes'.format(host, port),
-                  auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, password),
-                  data={
-                      'indexerThreads': 0,
-                      'maxRollbackPoints': 5,
-                      'memorySnapshotInterval': 200,
-                      'storageMode': 'forestdb',
-                  }
-                  )
+    requests.post(
+        'http://{0}:{1}/settings/indexes'.format(host, port),
+        auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, password),
+        data={
+            'indexerThreads': 0,
+            'maxRollbackPoints': 5,
+            'memorySnapshotInterval': 200,
+            'storageMode': 'forestdb',
+        }
+    )
 
 
 def _put_xattrs(bucket, key, xattrs, fill_timestamp_xattrs=True):
@@ -133,6 +139,7 @@ def _get_xattrs(bucket, key, xattrs):
         except couchbase.exceptions.SubdocPathNotFoundError:
             results[xkey] = None
     return results
+
 
 class TestCouchbase(unittest.TestCase):
     @classmethod
