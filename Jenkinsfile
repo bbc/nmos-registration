@@ -176,7 +176,6 @@ pipeline {
                         }
                         bbcGithubNotify(context: "pypi/upload", status: "PENDING")
                         sh 'rm -rf dist/*'
-                        bbcMakeGlobalWheel("py27")
                         bbcMakeGlobalWheel("py3")
                         bbcTwineUpload(toxenv: "py3", pypi: true)
                         script {

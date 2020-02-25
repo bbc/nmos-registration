@@ -41,7 +41,7 @@
     allow_unauthenticated: yes
 
 - name: Add user to group docker
-  shell: gpasswd -a ${USER} docker
+  shell: usermod -aG docker $USER
   become: yes
 
 - name: Get docker-compose

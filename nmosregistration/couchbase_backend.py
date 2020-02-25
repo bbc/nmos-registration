@@ -13,24 +13,26 @@
 # limitations under the License.
 
 from __future__ import absolute_import
-from requests import Response
-import json
-import couchbase.exceptions
-import couchbase.subdocument as subdoc
-from couchbase.cluster import Cluster, PasswordAuthenticator
-from nmoscommon.timestamp import Timestamp
-from flask import make_response
-
 from gevent import monkey
 monkey.patch_all()
 
-# following block all suffixed with `# noqa E402` - follow up
+import json  # noqa E402
+import couchbase.exceptions  # noqa E402
+import couchbase.subdocument as subdoc  # noqa E402
+
+from flask import make_response  # noqa E402
+from requests import Response  # noqa E402
+from couchbase.cluster import Cluster, PasswordAuthenticator  # noqa E402
+from nmoscommon.timestamp import Timestamp  # noqa E402
+
+from .config import config  # noqa E402
 
 legacy_key_table = {
     '@_apiversion': 'api_version'
 }
 
-WS_PERIOD = 30
+WS_PERIOD = config['ws_period']
+TTL = config['resource_expiry']
 
 
 def _legacy_key_lookup(key):
@@ -47,6 +49,7 @@ class CouchbaseInterface(object):
     port = None
 
     def __init__(self, cluster_address, username, password, buckets, *args, **kwargs):
+        print("username is {} and password is {}".format(username, password))
         self.cluster = Cluster('couchbase://{}'.format(','.join(cluster_address)))
         auth = PasswordAuthenticator(username, password)
         self.cluster.authenticate(auth)
@@ -56,7 +59,7 @@ class CouchbaseInterface(object):
                 'bucket': self.cluster.open_bucket(bucket_name),
                 'name': bucket_name
             }
-        self.ws_period = WS_PERIOD  # TODO: This should be defined by a param in the config file
+        self.ws_period = WS_PERIOD
 
     class RegistryUnavailable(Exception):
         pass
@@ -83,7 +86,7 @@ class CouchbaseInterface(object):
             rkey, subdoc.get('$document.exptime', xattr=True)
         )['$document.exptime']
 
-    def upsert(self, rtype, rkey, value, xattrs, bucket=None, ttl=12):
+    def upsert(self, rtype, rkey, value, xattrs, bucket=None, ttl=TTL):
         if bucket is None:
             bucket = self.buckets['registry']
         try:
@@ -128,7 +131,7 @@ class CouchbaseInterface(object):
         return r, actual_xattrs
 
     # Legacy put command warps around upsert. Sanitises inputs, removing etcd specific decoration.
-    def put(self, rtype, rkey, value, bucket=None, ttl=12, ws_period=None, port=None):
+    def put(self, rtype, rkey, value, bucket=None, ttl=TTL, ws_period=None, port=None):
         if bucket is None:
             bucket = self.buckets['registry']
         if ws_period is None:
@@ -212,12 +215,12 @@ class CouchbaseInterface(object):
             return False
         return actual_type['resource_type'] == resource_type[0:-1]
 
-    def touch(self, rkey, bucket=None, ttl=12):
+    def touch(self, rkey, bucket=None, ttl=TTL):
         if bucket is None:
             bucket = self.buckets['registry']
         return bucket['bucket'].touch(rkey, ttl=ttl)  # FIXME
 
-    def put_health(self, rkey, value, ttl=12, port=None):
+    def put_health(self, rkey, value, ttl=TTL, port=None):
         for descendent in self.get_descendents('node', rkey):
             self.touch(descendent, ttl=ttl)
         if self.touch(rkey, ttl=ttl).success is True:

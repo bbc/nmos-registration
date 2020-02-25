@@ -39,7 +39,8 @@ CONFIG_DEFAULTS = {
             "meta": ""
         }
     },
-    "resource_expiry": 12
+    "resource_expiry": 12,
+    "ws_period": 30
 }
 
 config = {}
