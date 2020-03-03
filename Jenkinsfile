@@ -52,9 +52,8 @@ pipeline {
         }
         stage("Finalise Vagrant Setup") {
             steps{
-                sh 'vagrant ssh -c "sudo gpasswd -a vagrant docker"'
+                sh 'vagrant ssh -c "sudo gpasswd -a vagrant docker"' // add vagrant user to the docker group
                 sh 'vagrant halt && vagrant up' // Should investigate further, but a restart is required for docker to pull image
-                sh 'vagrant ssh -c "cd /vagrant && make clean"'
             }
         }
         stage ("Tests") {

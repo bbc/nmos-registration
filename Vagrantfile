@@ -21,6 +21,7 @@ Vagrant.configure("2") do |config|
   config.vm.define "registration" do |registration|
     registration.vm.hostname = "registration"
     registration.vm.box = "bento/ubuntu-16.04"
+    registration.vbguest.auto_update = false
     registration.vm.provider "virtualbox" do |vb|
         vb.gui = false
         vb.linked_clone = true

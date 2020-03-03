@@ -29,7 +29,7 @@ OAUTH_MODE = config.get('oauth_mode', False)
 
 VALID_TYPES = ['node', 'source', 'flow', 'device', "receiver", "sender"]
 
-NODE_SEEN_TTL = 12  # seconds until a node considered "dead".
+TTL = config['resource_expiry']
 
 AGGREGATOR_APINAMESPACE = "x-nmos"
 AGGREGATOR_APINAME = "registration"
@@ -40,7 +40,7 @@ if config.get("https_mode", "disabled") == "enabled":
 
 class RoutesCommon(object):
 
-    def __init__(self, logger, registry, api_version="v1.0", api_schema=schema, resource_expiry=NODE_SEEN_TTL):
+    def __init__(self, logger, registry, api_version="v1.0", api_schema=schema, resource_expiry=TTL):
         self.logger = logger
         self.registry = registry
         self.modifier = RegModifier(logger=self.logger)

@@ -23,6 +23,8 @@ from werkzeug.wrappers import Response
 
 REGISTRY_PORT = 2379
 
+TTL = 12
+
 
 class MockLogger():
     def __init__(self):
@@ -93,8 +95,8 @@ class TestAggregatorAPI(unittest.TestCase):
     def setUp(self):
         self.mock_log = MockLogger()
         self.mock_registry = MockRegistry()
-        self.mock_registry.port = 4001
-        self.api = v1_0.Routes(logger=self.mock_log, registry=self.mock_registry)
+        self.mock_registry.port = REGISTRY_PORT
+        self.api = v1_0.Routes(logger=self.mock_log, registry=self.mock_registry, resource_expiry=TTL)
 
     def test_add_resource(self):
         """Adding a resource calls 'put' on registry"""
@@ -124,12 +126,18 @@ class TestAggregatorAPI(unittest.TestCase):
             (
                 'put_health',
                 (key, int(time.time())),
-                {'port': 2379, 'ttl': 12}
+                {'port': REGISTRY_PORT, 'ttl': 12}
             )
         ]
         self.assertEqual(len(expected), len(self.mock_registry.invocations))
-        for request, response in zip(expected, self.mock_registry.invocations):
-            self.assertEqual(request[0], response[0])
+        # Checks long string in request
+        self.assertEqual(json.loads(expected[0][1][2]), json.loads(self.mock_registry.invocations[0][1][2]))
+        for expect, invoke in zip(expected, self.mock_registry.invocations):
+            for thing in expect:
+                if expect.index(thing) == 1:  # big tuple
+                    continue
+                self.assertEqual(thing, invoke[expect.index(thing)])
+            self.assertEqual(expect[0], invoke[0])
 
     def test_add_resource_modification(self):
         """UUID should be modified to lower case before put"""
@@ -193,7 +201,7 @@ class TestAggregatorAPI_NoRegistry(unittest.TestCase):
     def setUp(self):
         self.mock_log = MockLogger()
         self.mock_registry = MockRegistry_broken()
-        self.mock_registry.port = 4001
+        self.mock_registry.port = REGISTRY_PORT
         self.api = v1_0.Routes(logger=self.mock_log, registry=self.mock_registry)
 
     def test_add_resource_no_registry(self):
