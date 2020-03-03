@@ -20,6 +20,7 @@ import couchbase.subdocument as subdoc
 import couchbase.exceptions
 import os
 import time
+import polling
 from nmoscommon.timestamp import Timestamp
 from testcontainers.compose import DockerCompose
 from tests.helpers import util
@@ -171,7 +172,13 @@ class TestCouchbase(unittest.TestCase):
 
         _initialise_cluster(self.host, self.port, BUCKET_CONFIG, TEST_USERNAME, TEST_PASSWORD)
 
-        time.sleep(10)  # TODO, properly wait for setup somehow, possible long poll?
+        # Poll for server coming up
+        polling.poll(
+            lambda: requests.get("http://{}:{}".format(self.host, self.port)).status_code == 200,
+            step=TIMEOUT,
+            timeout=TIMEOUT * 10,
+            ignore_exceptions=(requests.exceptions.ConnectionError)
+        )
 
         self.registry = RegistryAggregatorService()
         self.registry.config['registry'] = {

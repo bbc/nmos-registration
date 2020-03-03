@@ -21,7 +21,7 @@ Vagrant.configure("2") do |config|
   config.vm.define "registration" do |registration|
     registration.vm.hostname = "registration"
     registration.vm.box = "bento/ubuntu-16.04"
-    registration.vbguest.auto_update = false
+    registration.vbguest.auto_update = false  # Upgrading Guest Additions causes fault on initial boot
     registration.vm.provider "virtualbox" do |vb|
         vb.gui = false
         vb.linked_clone = true
@@ -30,7 +30,8 @@ Vagrant.configure("2") do |config|
         vb.customize ["storagectl", :id, "--name", "SATA Controller", "--hostiocache", "on" ]
       end
     registration.vm.network "private_network", type: "dhcp"
-    registration.vm.network "forwarded_port", guest: 80, host: 9090, auto_correct: true
+    registration.vm.network "forwarded_port", guest: 80, host: 9090, auto_correct: true # Port 80
+    registration.vm.network "forwarded_port", guest: 8235, host: 5328, auto_correct: true # Port 80
     registration.vm.network "forwarded_port", guest: 8091, host: 1908, auto_correct: true # Web Console
     registration.vm.boot_timeout = 600
   end

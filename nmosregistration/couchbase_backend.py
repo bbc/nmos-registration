@@ -49,7 +49,6 @@ class CouchbaseInterface(object):
     port = None
 
     def __init__(self, cluster_address, username, password, buckets, *args, **kwargs):
-        print("username is {} and password is {}".format(username, password))
         self.cluster = Cluster('couchbase://{}'.format(','.join(cluster_address)))
         auth = PasswordAuthenticator(username, password)
         self.cluster.authenticate(auth)

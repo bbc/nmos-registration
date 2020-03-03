@@ -15,6 +15,10 @@ packages: # Packages required
   - xz-utils
   - virtualenv
 
+python_packages:
+  - setuptools
+  - polling
+
 docker_dependencies:
   - apt-transport-https
   - ca-certificates
@@ -42,8 +46,8 @@ discovery_config:
     type: couchbase
     hosts: 127.0.0.1
     port: 8091
-    username: vagrant
-    password: ""
+    username: nmos-test
+    password: password
     buckets:
-      registry: registry
-      meta: meta
+      registry: nmos-test
+      meta: nmos-meta-config

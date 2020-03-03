@@ -59,9 +59,9 @@
     dest: '/usr/bin/python'
     state: link
 
-- name: Install setuptools
+- name: Install Python packages
   pip:
-    name: setuptools
+    name: "{{ python_packages }}"
 
 - name: Clone nmos-common
   git:
