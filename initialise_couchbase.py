@@ -1,6 +1,9 @@
 import requests
 import subprocess
 import polling
+import time
+
+from nmosregistration.registryaggregatorservice import RegistryAggregatorService
 from nmosregistration.config import config
 
 TIMEOUT = 2
@@ -117,4 +120,19 @@ polling.poll(
 
 # Initialise Cluster
 _initialise_cluster(host, port, bucket_config, username, password)
-print("Couchbase cluster is up and configured on Host: {} and Port: {}".format(host, port))
+print("Couchbase cluster is up and configured on Host: {} and Port: {}".format(host, 1908))
+
+time.sleep(10)
+
+# Bring up Regstry API
+registry = RegistryAggregatorService()
+print("Registry API Service available on host: {} and port: {}".format(host, 5328))
+registry.run()
+
+try:
+    print("Stopping API Service")
+    registry.stop()
+    print("Killing Container")
+    subprocess.run(["docker kill $(docker ps -q)"], check=True, shell=True)
+except Exception as e:
+    print(e)
