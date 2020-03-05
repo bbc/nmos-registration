@@ -1,20 +1,25 @@
 import requests
 import subprocess
 import polling
-
-from nmosregistration.registryaggregatorservice import RegistryAggregatorService
-
-BUCKET_CONFIG = {
-    'registry': 'nmos-test',
-    'meta': 'nmos-meta-config'
-}
-USERNAME = 'nmos-test'
-PASSWORD = 'password'
-
-HOST = '127.0.0.1'
-PORT = 8091
+from nmosregistration.config import config
 
 TIMEOUT = 2
+
+
+def get_registry_config_data():
+    buckets = config["registry"].get("buckets")
+    if not buckets or any(not buckets[x] for x in buckets):
+        raise ValueError("No value for buckets in config")
+
+    username = config["registry"].get("username")
+    password = config["registry"].get("password")
+    if not username or not password:
+        raise ValueError("No username and/or password value in config")
+
+    hosts = config["registry"].get("hosts", '127.0.0.1')
+    port = config["registry"].get("port", 8091)
+
+    return hosts[0], port, buckets, username, password
 
 
 def _initialise_cluster(host, port, bucket, username, password):
@@ -53,15 +58,15 @@ def _initialise_cluster(host, port, bucket, username, password):
         'http://{0}:{1}/settings/web'.format(host, port),
         auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
         data={
-            'password': PASSWORD,
-            'username': USERNAME,
+            'password': password,
+            'username': username,
             'port': port,
         }
     )
     # Build registry bucket
     requests.post(
         'http://{0}:{1}/pools/default/buckets'.format(host, port),
-        auth=requests.auth.HTTPBasicAuth(USERNAME, PASSWORD),
+        auth=requests.auth.HTTPBasicAuth(username, password),
         data={
             'flushEnabled': 1,
             'replicaNumber': 0,
@@ -74,7 +79,7 @@ def _initialise_cluster(host, port, bucket, username, password):
     # Build meta bucket
     requests.post(
         'http://{0}:{1}/pools/default/buckets'.format(host, port),
-        auth=requests.auth.HTTPBasicAuth(USERNAME, PASSWORD),
+        auth=requests.auth.HTTPBasicAuth(username, password),
         data={
             'flushEnabled': 1,
             'replicaNumber': 0,
@@ -87,7 +92,7 @@ def _initialise_cluster(host, port, bucket, username, password):
     # Set indexer mode
     requests.post(
         'http://{0}:{1}/settings/indexes'.format(host, port),
-        auth=requests.auth.HTTPBasicAuth(USERNAME, password),
+        auth=requests.auth.HTTPBasicAuth(username, password),
         data={
             'indexerThreads': 0,
             'maxRollbackPoints': 5,
@@ -97,21 +102,19 @@ def _initialise_cluster(host, port, bucket, username, password):
     )
 
 
+host, port, bucket_config, username, password = get_registry_config_data()
+
 # Run Docker Compose to bring up Couchbase Server (non-blocking)
 subprocess.run(["docker-compose -f ./tests/docker-compose.yml up -d"], check=True, shell=True)
 
 # Poll for server coming up
 polling.poll(
-    lambda: requests.get("http://{}:{}".format(HOST, PORT)).status_code == 200,
+    lambda: requests.get("http://{}:{}".format(host, port)).status_code == 200,
     step=TIMEOUT,
-    poll_forever=True,
+    timeout=TIMEOUT * 10,
     ignore_exceptions=(requests.exceptions.ConnectionError)
 )
 
 # Initialise Cluster
-_initialise_cluster(HOST, PORT, BUCKET_CONFIG, USERNAME, PASSWORD)
-print("Couchbase cluster is up and configured on Host: {} and Port: {}".format(HOST, PORT))
-
-# Bring up API
-registry = RegistryAggregatorService()
-registry.run()
+_initialise_cluster(host, port, bucket_config, username, password)
+print("Couchbase cluster is up and configured on Host: {} and Port: {}".format(host, port))

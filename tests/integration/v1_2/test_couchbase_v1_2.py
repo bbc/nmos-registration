@@ -20,7 +20,6 @@ import couchbase.subdocument as subdoc
 import couchbase.exceptions
 import os
 import time
-import polling
 from nmoscommon.timestamp import Timestamp
 from testcontainers.compose import DockerCompose
 from tests.helpers import util
@@ -42,8 +41,6 @@ API_VERSION = 'v1.2'
 
 WS_PERIOD = 30
 
-TIMEOUT = 2
-
 
 def _initialise_cluster(host, port, bucket, username, password):
     # Initialize node
@@ -55,7 +52,6 @@ def _initialise_cluster(host, port, bucket, username, password):
             'index_path': '/opt/couchbase/var/lib/couchbase/data',
             'cbas_path': '/opt/couchbase/var/lib/couchbase/data',
         },
-        timeout=TIMEOUT
     )
 
     # Rename node
@@ -65,7 +61,6 @@ def _initialise_cluster(host, port, bucket, username, password):
         data={
             'hostname': '127.0.0.1'
         },
-        timeout=TIMEOUT
     )
 
     # Setup services
@@ -75,7 +70,6 @@ def _initialise_cluster(host, port, bucket, username, password):
         data={
             'services': 'kv,index,n1ql,fts',
         },
-        timeout=TIMEOUT
     )
 
     # Setup admin username/password
@@ -87,7 +81,6 @@ def _initialise_cluster(host, port, bucket, username, password):
             'username': TEST_USERNAME,
             'port': port,
         },
-        timeout=TIMEOUT
     )
 
     # Build registry bucket
@@ -102,7 +95,6 @@ def _initialise_cluster(host, port, bucket, username, password):
             'bucketType': 'couchbase',
             'name': bucket['registry'],
         },
-        timeout=TIMEOUT
     )
 
     # Build meta bucket
@@ -117,7 +109,6 @@ def _initialise_cluster(host, port, bucket, username, password):
             'bucketType': 'couchbase',
             'name': bucket['meta'],
         },
-        timeout=TIMEOUT
     )
 
     # Set indexer mode
@@ -130,7 +121,6 @@ def _initialise_cluster(host, port, bucket, username, password):
             'memorySnapshotInterval': 200,
             'storageMode': 'forestdb',
         },
-        timeout=TIMEOUT
     )
 
 
@@ -172,13 +162,7 @@ class TestCouchbase(unittest.TestCase):
 
         _initialise_cluster(self.host, self.port, BUCKET_CONFIG, TEST_USERNAME, TEST_PASSWORD)
 
-        # Poll for server coming up
-        polling.poll(
-            lambda: requests.get("http://{}:{}".format(self.host, self.port)).status_code == 200,
-            step=TIMEOUT,
-            timeout=TIMEOUT * 10,
-            ignore_exceptions=(requests.exceptions.ConnectionError)
-        )
+        time.sleep(10)  # TODO, properly wait for setup somehow, possible long poll?
 
         self.registry = RegistryAggregatorService()
         self.registry.config['registry'] = {

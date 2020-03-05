@@ -44,7 +44,8 @@ reg_working_dir: /vagrant
 discovery_config:
   registry:
     type: couchbase
-    hosts: 127.0.0.1
+    hosts:
+      - 127.0.0.1
     port: 8091
     username: nmos-test
     password: password
