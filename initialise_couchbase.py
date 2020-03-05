@@ -2,9 +2,12 @@ import requests
 import subprocess
 import polling
 import time
+import couchbase.exceptions
 
+from couchbase.cluster import Cluster, PasswordAuthenticator
 from nmosregistration.registryaggregatorservice import RegistryAggregatorService
 from nmosregistration.config import config
+
 
 TIMEOUT = 2
 
@@ -124,9 +127,26 @@ print("Couchbase cluster is up and configured on Host: {} and Port: {}".format(h
 
 time.sleep(10)
 
-# Bring up Regstry API
+# Bring up Registry API
 registry = RegistryAggregatorService()
 print("Registry API Service available on host: {} and port: {}".format(host, 5328))
+
+# Setup Indexes for databases
+cluster = Cluster('couchbase://{}'.format(host))
+auth = PasswordAuthenticator(username, password)
+cluster.authenticate(auth)
+test_bucket = cluster.open_bucket(bucket_config['registry'])
+test_bucket_manager = test_bucket.bucket_manager()
+test_meta_bucket = cluster.open_bucket(bucket_config['meta'])
+test_meta_bucket_manager = test_bucket.bucket_manager()
+
+try:
+    test_bucket_manager.n1ql_index_create('test-bucket-primary-index', primary=True)
+    test_meta_bucket_manager.n1ql_index_create('test-bucket-primary-index', primary=True)
+except couchbase.exceptions.KeyExistsError:
+    pass
+
+time.sleep(5)
 registry.run()
 
 try:

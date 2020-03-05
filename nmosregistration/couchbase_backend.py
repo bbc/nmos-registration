@@ -162,12 +162,16 @@ class CouchbaseInterface(object):
         self.upsert(rtype[0:-1], rkey, value, xattrs, ttl=ttl + ws_period, bucket=self.buckets['meta'])
         return reg_response
 
+    # for compatability with old API
+    def getresources(self, resource_type):
+        return self.get_node_residents(resource_type)
+
     # Generalise? Contextual query based on rtype?
     def get_node_residents(self, rkey, bucket=None):
         if bucket is None:
             bucket = self.buckets['registry']
         query = couchbase.n1ql.N1QLQuery(
-            "SELECT id FROM {0} WHERE meta().xattrs.node_id = '{1}'"
+            "SELECT id FROM `{0}` WHERE meta().xattrs.node_id = '{1}'"
             .format(bucket['name'], rkey)
         )
         residents = []
