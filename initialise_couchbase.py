@@ -127,10 +127,6 @@ print("Couchbase cluster is up and configured on Host: {} and Port: {}".format(h
 
 time.sleep(10)
 
-# Bring up Registry API
-registry = RegistryAggregatorService()
-print("Registry API Service available on host: {} and port: {}".format(host, 5328))
-
 # Setup Indexes for databases
 cluster = Cluster('couchbase://{}'.format(host))
 auth = PasswordAuthenticator(username, password)
@@ -147,6 +143,10 @@ except couchbase.exceptions.KeyExistsError:
     pass
 
 time.sleep(5)
+
+# Bring up Registry API
+registry = RegistryAggregatorService()
+print("Registry API Service available on host: {} and port: {}".format(host, 5328))
 registry.run()
 
 try:
