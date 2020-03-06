@@ -95,6 +95,19 @@ service.run() # Runs forever
 
 To run a local instance of Couchbase Server, the easiest approach is to run `docker-compose` in the `tests/` directory and run a test container. Some setup is required, either through a web GUI accessible via `http://[host]:8091` or POSTing the http requests specified in `_initialise_cluster()` within `test_couchbase` in `tests/v1_0/`.
 
+For a full development environment, a `Vagrantfile` is provided in the root of the directory that provisions a Virtual Machine with all the required dependencies. This can be run using:
+
+```bash
+vagrant up --provision
+```
+
+Note this will require both Vagrant and Ansible to be installed in order to provision the VM. Once the machine has been provisioned, running the following script will configure a single node cluster and bring up the API Service:
+
+```bash
+vagrant ssh  # ssh into the VM
+python3 initialise_couchbase.py  # initialise cluster
+```
+
 ## Tests
 
 Unit tests are provided.  Currently these have hard-coded dummy/example hostnames, IP addresses and UUIDs.  You will need to edit the Python files in the test/ directories to suit your needs and then "make test".

@@ -26,7 +26,21 @@ CONFIG_DEFAULTS = {
     "priority": 100,
     "https_mode": "disabled",
     "enable_mdns": True,
-    "oauth_mode": False
+    "oauth_mode": False,
+    "service_port": 8235,
+    "registry": {
+        "type": "couchbase",
+        "hosts": [""],
+        "port": 8091,
+        "username": "",
+        "password": "",
+        "buckets": {
+            "registry": "",
+            "meta": ""
+        }
+    },
+    "resource_expiry": 12,
+    "ws_period": 30
 }
 
 config = {}

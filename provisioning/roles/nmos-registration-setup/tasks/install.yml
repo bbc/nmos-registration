@@ -1,0 +1,88 @@
+---
+# module: nmos-registration-setup/tasks
+# description: Provision NMOS registration VM
+
+- name: Get libcouchbase release
+  get_url:
+    url: http://packages.couchbase.com/releases/couchbase-release/couchbase-release-1.0-6-amd64.deb
+    dest: '{{ reg_working_dir }}/couchbase-release-1.0-6-amd64.deb'
+
+# - name: Add deadsnakes repo for Python 3.5
+#   apt_repository:
+#     repo: ppa:fkrull/deadsnakes
+
+- name: Install all required packages for nmos-joint-ri-setup
+  apt:
+    pkg: "{{ packages }}"
+    update_cache: yes
+    state: present
+
+- name: Install Couchbase Debian Package
+  apt:
+    deb: '{{ reg_working_dir }}/couchbase-release-1.0-6-amd64.deb'
+
+- name: Install Couchbase stuff
+  apt:
+    pkg: "{{ couchbase_sdk_packages }}"
+    update_cache: yes
+    state: present
+
+- name: Docker preperation
+  apt:
+    pkg: "{{ docker_dependencies }}"
+
+- name: Add docker repo
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu    xenial    stable
+
+- name: Install docker stuff
+  apt:
+    pkg: "{{ docker_packages }}"
+    allow_unauthenticated: yes
+
+- name: Add user to group docker
+  shell: usermod -aG docker vagrant
+  become: yes
+
+- name: Get docker-compose
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/1.24.0/docker-compose-Linux-x86_64"
+    dest: '/usr/local/bin/docker-compose'
+
+- name: Change docker-compose permissions
+  shell: chmod +x /usr/local/bin/docker-compose
+  become: yes
+
+- name: Use Python 3 by default
+  file:
+    src: 'python3'
+    dest: '/usr/bin/python'
+    state: link
+
+- name: Install Python packages
+  pip:
+    name: "{{ python_packages }}"
+
+- name: Clone nmos-common
+  git:
+    repo: 'https://github.com/bbc/nmos-common.git'
+    dest: /nmos-common
+
+- name: Install nmos-common
+  shell: cd /nmos-common && python setup.py install
+  become: yes
+
+# - name: Run setup.py
+#   shell: 'cd {{ reg_working_dir }} && python setup.py install'
+#   become: yes
+
+- name: Install pip dependencies
+  pip:
+    chdir: "{{ reg_working_dir }}"
+    name: .
+    extra_args: -e
+
+# - name: Clean directory
+#   make:
+#     chdir: "{{ reg_working_dir }}"
+#     # target: clean

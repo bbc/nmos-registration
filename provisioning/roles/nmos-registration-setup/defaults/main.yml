@@ -15,6 +15,10 @@ packages: # Packages required
   - xz-utils
   - virtualenv
 
+python_packages:
+  - setuptools
+  - polling
+
 docker_dependencies:
   - apt-transport-https
   - ca-certificates
@@ -24,10 +28,27 @@ docker_dependencies:
 
 docker_packages:
   - docker-ce
-  - docker-ce
   - docker-ce-cli
   - containerd.io
 
 couchbase_sdk_packages: # Couchbase SDK packages required (separate to install after installing .deb)
   - libcouchbase-dev
   - libcouchbase2-bin
+
+reg_config_install_path: /etc/ips-regaggregator
+
+reg_config_owner: vagrant
+
+reg_working_dir: /vagrant
+
+discovery_config:
+  registry:
+    type: couchbase
+    hosts:
+      - 127.0.0.1
+    port: 8091
+    username: nmos-test
+    password: password
+    buckets:
+      registry: nmos-test
+      meta: nmos-meta-config

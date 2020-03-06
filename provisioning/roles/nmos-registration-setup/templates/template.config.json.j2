@@ -1,0 +1,5 @@
+{
+{% for key, value in discovery_config.items() %}
+  {{ key | to_nice_json }}: {{ discovery_config[key] | to_nice_json }}{{ "," if not loop.last else "" }}
+{% endfor %}
+}
