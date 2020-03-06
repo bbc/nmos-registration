@@ -20,7 +20,7 @@ import json  # noqa E402
 import couchbase.exceptions  # noqa E402
 import couchbase.subdocument as subdoc  # noqa E402
 
-from flask import make_response  # noqa E402
+from flask import make_response, jsonify  # noqa E402
 from requests import Response  # noqa E402
 from couchbase.cluster import Cluster, PasswordAuthenticator  # noqa E402
 from nmoscommon.timestamp import Timestamp  # noqa E402
@@ -90,7 +90,7 @@ class CouchbaseInterface(object):
             bucket = self.buckets['registry']
         try:
             upsert_result = bucket['bucket'].upsert(rkey, value, ttl=ttl)
-            r = make_response(json.dumps(value), 200)
+            r = make_response(jsonify(value), 201)
         except couchbase.exceptions.KeyExistsError:
             return make_response(409)
         if upsert_result.success:
@@ -227,7 +227,7 @@ class CouchbaseInterface(object):
         for descendent in self.get_descendents('node', rkey):
             self.touch(descendent, ttl=ttl)
         if self.touch(rkey, ttl=ttl).success is True:
-            return make_response(json.dumps({'health': value}), 200)
+            return make_response(jsonify({'health': value}), 200)
 
     def remove(self, rkey, bucket=None):
         if bucket is None:
