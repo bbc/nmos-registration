@@ -71,15 +71,15 @@ def _initialise_cluster(host, port, bucket, username, password):
         'http://{0}:{1}/settings/web'.format(host, port),
         auth=requests.auth.HTTPBasicAuth('Administrator', 'password'),
         data={
-            'password': TEST_PASSWORD,
-            'username': TEST_USERNAME,
+            'password': password,
+            'username': username,
             'port': port,
         }
     )
     # Build registry bucket
     requests.post(
         'http://{0}:{1}/pools/default/buckets'.format(host, port),
-        auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, TEST_PASSWORD),
+        auth=requests.auth.HTTPBasicAuth(username, password),
         data={
             'flushEnabled': 1,
             'replicaNumber': 0,
@@ -92,7 +92,7 @@ def _initialise_cluster(host, port, bucket, username, password):
     # Build meta bucket
     requests.post(
         'http://{0}:{1}/pools/default/buckets'.format(host, port),
-        auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, TEST_PASSWORD),
+        auth=requests.auth.HTTPBasicAuth(username, password),
         data={
             'flushEnabled': 1,
             'replicaNumber': 0,
@@ -105,7 +105,7 @@ def _initialise_cluster(host, port, bucket, username, password):
     # Set indexer mode
     requests.post(
         'http://{0}:{1}/settings/indexes'.format(host, port),
-        auth=requests.auth.HTTPBasicAuth(TEST_USERNAME, password),
+        auth=requests.auth.HTTPBasicAuth(username, password),
         data={
             'indexerThreads': 0,
             'maxRollbackPoints': 5,
