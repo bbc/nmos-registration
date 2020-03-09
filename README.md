@@ -105,7 +105,7 @@ Note this will require both Vagrant and Ansible to be installed in order to prov
 
 ```bash
 vagrant ssh  # ssh into the VM
-python3 initialise_couchbase.py  # initialise cluster
+python3 /vagrant/initialise_couchbase.py  # initialise cluster
 ```
 
 ## Tests

@@ -89,10 +89,11 @@ class CouchbaseInterface(object):
         if bucket is None:
             bucket = self.buckets['registry']
         try:
-            upsert_result = bucket['bucket'].upsert(rkey, value, ttl=ttl)
+            upsert_result = bucket['bucket'].insert(rkey, value, ttl=ttl)
             r = make_response(jsonify(value), 201)
         except couchbase.exceptions.KeyExistsError:
-            return make_response(409)
+            upsert_result = bucket['bucket'].replace(rkey, value, ttl=ttl)
+            r = make_response(jsonify(value), 200)
         if upsert_result.success:
             write_time = Timestamp.get_time().to_nanosec()
             subdoc_results = []
