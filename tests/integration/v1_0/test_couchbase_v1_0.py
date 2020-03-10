@@ -207,7 +207,7 @@ class TestCouchbase(unittest.TestCase):
             json=request_payload
         )
 
-        self.assertEqual(aggregator_response.status_code, 200)
+        self.assertEqual(aggregator_response.status_code, 201)
         self.assertEqual(aggregator_response.headers['location'], '/x-nmos/registration/{}/resource/nodes/{}/'.format(
             API_VERSION, doc_body['id'])
         )
