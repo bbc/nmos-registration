@@ -46,7 +46,7 @@ package_names = packages.keys()
 # REMEMBER: If this list is updated, please also update stdeb.cfg and the RPM specfile
 packages_required = [
     "gevent>=1.2.2",
-    "nmoscommon>=0.6.0",
+    "nmoscommon>=0.20.0",
     "flask>=0.10.1",
     "cysystemd",
     "ws4py>=0.3.4",
@@ -57,7 +57,7 @@ packages_required = [
 
 setup(
     name="registryaggregator",
-    version="0.8.0.post1",
+    version="0.8.1",
     description="BBC implementation of an AMWA NMOS Registration API",
     url='https://github.com/bbc/nmos-registration',
     author='Peter Brightwell',

@@ -1,5 +1,8 @@
 # NMOS Registration API Implementation Changelog
 
+## 0.8.1
+- Replace RequiresAuth decorator with AuthMiddleware middleware
+
 ## 0.8.0
 - Use official etcd ports
 

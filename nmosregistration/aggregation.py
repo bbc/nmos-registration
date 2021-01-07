@@ -16,15 +16,15 @@ from __future__ import absolute_import
 
 from nmoscommon.utils import getLocalIP
 from nmoscommon.webapi import WebAPI, route
-from .etcd_backend import EtcdInterface
-from nmosregistration.garbage import GarbageCollect
-
-from nmosregistration.v1_0 import routes as v1_0
-from nmosregistration.v1_1 import routes as v1_1
-from nmosregistration.v1_2 import routes as v1_2
-from nmosregistration.v1_3 import routes as v1_3
-
+from nmoscommon.auth.auth_middleware import AuthMiddleware
 from nmoscommon.nmoscommonconfig import config as _config
+
+from .garbage import GarbageCollect
+from .etcd_backend import EtcdInterface
+from .v1_0 import routes as v1_0
+from .v1_1 import routes as v1_1
+from .v1_2 import routes as v1_2
+from .v1_3 import routes as v1_3
 
 HOST = getLocalIP()
 SERVICE_PORT = 8235
@@ -41,6 +41,10 @@ class AggregatorAPI(WebAPI):
     def __init__(self, logger, config, registry=EtcdInterface()):
         super(AggregatorAPI, self).__init__()
         self._config = config
+
+        # Add Auth Middleware
+        oauth_mode = config.get('oauth_mode', False)
+        self.app.wsgi_app = AuthMiddleware(self.app.wsgi_app, auth_mode=oauth_mode, api_name=AGGREGATOR_APINAME)
 
         garbage_collect_interval = int(self._config.get("garbage_collect_interval", 10))
         self._garbage_collector = GarbageCollect(identifier=HOST, registry=registry, interval=garbage_collect_interval)
